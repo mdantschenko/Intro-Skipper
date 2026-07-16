@@ -21,7 +21,9 @@ from intro_skipper.update_notification import build_update_notification
 
 def main() -> None:
     command_line_options = parse_command_line_options(sys.argv[1:])
-    log_file_path = configure_logging(command_line_options.write_log_file)
+    log_file_path = configure_logging(
+        write_log_file=command_line_options.write_log_file
+    )
     logger = logging.getLogger(ApplicationConstants.LOGGER_NAME)
 
     _report_startup_information(logger, log_file_path)

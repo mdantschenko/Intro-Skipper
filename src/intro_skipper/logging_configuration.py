@@ -6,6 +6,7 @@ from intro_skipper.helpers.constants import ApplicationConstants
 
 
 def configure_logging(
+    *,
     write_log_file: bool,
     log_directory: Path = ApplicationConstants.LOG_DIRECTORY,
 ) -> Path | None:

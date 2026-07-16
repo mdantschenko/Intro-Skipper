@@ -9,7 +9,7 @@ def test_log_folder_and_file_are_created_when_log_files_are_enabled(
     tmp_path: Path,
 ) -> None:
     log_directory = tmp_path / "logs"
-    log_file_path = configure_logging(True, log_directory)
+    log_file_path = configure_logging(write_log_file=True, log_directory=log_directory)
 
     logging.getLogger(ApplicationConstants.LOGGER_NAME).info("Netflix: skipped intro")
 
@@ -20,7 +20,7 @@ def test_log_folder_and_file_are_created_when_log_files_are_enabled(
 
 def test_no_log_folder_or_file_is_created_by_default(tmp_path: Path) -> None:
     log_directory = tmp_path / "logs"
-    log_file_path = configure_logging(False, log_directory)
+    log_file_path = configure_logging(write_log_file=False, log_directory=log_directory)
 
     logging.getLogger(ApplicationConstants.LOGGER_NAME).info("Netflix: skipped intro")
 
