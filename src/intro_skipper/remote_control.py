@@ -38,7 +38,7 @@ class RemoteControlServer:
         )
         self._http_server.remote_control = self  # type: ignore[attr-defined]
         self._screencast: ScreencastHandle | None = None
-        self._screencast_tab_identifier: str | None = None
+        self._live_tab: BrowserTab | None = None
         self._screencast_lock = threading.Lock()
 
     @property
@@ -100,7 +100,7 @@ class RemoteControlServer:
         )
 
     def _tap_on_service_tab(self, command: dict[str, Any]) -> None:
-        service_tab = self._tab_finder.find_service_tab()
+        service_tab = self._live_tab_or_search()
         if service_tab is not None:
             service_tab.tap_at_fraction(
                 float(command.get("x_fraction", 0.5)),
@@ -108,7 +108,7 @@ class RemoteControlServer:
             )
 
     def _scroll_service_tab(self, command: dict[str, Any]) -> None:
-        service_tab = self._tab_finder.find_service_tab()
+        service_tab = self._live_tab_or_search()
         if service_tab is not None:
             service_tab.scroll_by(float(command.get("delta_y", 0)))
 
@@ -116,22 +116,25 @@ class RemoteControlServer:
         self._stop_screencast()
 
     def read_live_frame(self) -> bytes | None:
-        service_tab = self._tab_finder.find_service_tab()
+        service_tab = self._live_tab_or_search()
         if service_tab is None:
             return None
         screencast = self._ensure_screencast(service_tab)
         return screencast.latest_frame() or service_tab.capture_screenshot()
 
+    def _live_tab_or_search(self) -> BrowserTab | None:
+        # The tab is cached while the live view runs, so frame, tap and
+        # scroll requests skip the tab-list roundtrip to Chrome.
+        with self._screencast_lock:
+            if self._live_tab is not None:
+                return self._live_tab
+        return self._tab_finder.find_service_tab()
+
     def _ensure_screencast(self, service_tab: BrowserTab) -> ScreencastHandle:
         with self._screencast_lock:
-            if (
-                self._screencast is None
-                or self._screencast_tab_identifier != service_tab.identifier
-            ):
-                if self._screencast is not None:
-                    self._screencast.stop()
+            if self._screencast is None:
                 self._screencast = service_tab.open_screencast()
-                self._screencast_tab_identifier = service_tab.identifier
+                self._live_tab = service_tab
             return self._screencast
 
     def _stop_screencast(self) -> None:
@@ -139,7 +142,7 @@ class RemoteControlServer:
             if self._screencast is not None:
                 self._screencast.stop()
                 self._screencast = None
-                self._screencast_tab_identifier = None
+            self._live_tab = None
 
     def _read_video_state(self) -> dict[str, Any] | None:
         video_tab = self._tab_finder.find_video_tab()
@@ -223,6 +226,9 @@ def _prefer_home_network_addresses(addresses: set[str]) -> list[str]:
 
 
 class _RemoteControlRequestHandler(BaseHTTPRequestHandler):
+    # Keep-alive spares the phone a new TCP connection per frame request.
+    protocol_version = "HTTP/1.1"
+
     def do_GET(self) -> None:
         if self.path == "/state":
             self._send_json(self._remote_control().describe_state())

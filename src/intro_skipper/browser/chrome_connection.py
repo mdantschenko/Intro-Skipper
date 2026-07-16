@@ -98,6 +98,7 @@ class ChromeTab(BrowserTab):
     def __init__(self, url: str, websocket_debugger_url: str) -> None:
         self._url = url
         self._websocket_debugger_url = websocket_debugger_url
+        self._cached_viewport_size: dict[str, Any] | None = None
 
     @property
     def url(self) -> str:
@@ -163,10 +164,13 @@ class ChromeTab(BrowserTab):
         )
 
     def _read_viewport_size(self) -> dict[str, Any] | None:
+        if self._cached_viewport_size is not None:
+            return self._cached_viewport_size
         viewport = self.evaluate_javascript(JavaScriptSnippets.READ_VIEWPORT_SIZE)
         if not isinstance(viewport, dict):
             return None
-        return cast(dict[str, Any], viewport)
+        self._cached_viewport_size = cast(dict[str, Any], viewport)
+        return self._cached_viewport_size
 
     def _send_devtools_command(
         self, method: str, params: dict[str, Any]

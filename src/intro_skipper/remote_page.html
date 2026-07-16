@@ -355,7 +355,19 @@
         }
       })
       .catch(() => {})
-      .finally(() => setTimeout(refreshLiveFrame, 90));
+      .finally(() => setTimeout(refreshLiveFrame, 15));
+  }
+
+  let pendingScrollDelta = 0;
+  let scrollFlushTimer = null;
+  function queueScroll(deltaY) {
+    pendingScrollDelta += deltaY;
+    if (scrollFlushTimer !== null) return;
+    scrollFlushTimer = setTimeout(() => {
+      sendCommand({ action: "scroll", delta_y: pendingScrollDelta });
+      pendingScrollDelta = 0;
+      scrollFlushTimer = null;
+    }, 70);
   }
 
   document.getElementById("browse-button").addEventListener("click", () => {
@@ -379,9 +391,9 @@
   liveImage.addEventListener("pointermove", (event) => {
     if (dragStart === null) return;
     const deltaY = dragStart.y - event.clientY;
-    if (Math.abs(deltaY) > 14) {
+    if (Math.abs(deltaY) > 8) {
       dragMoved = true;
-      sendCommand({ action: "scroll", delta_y: deltaY * 3 });
+      queueScroll(deltaY * 3);
       dragStart = { x: event.clientX, y: event.clientY };
     }
   });
