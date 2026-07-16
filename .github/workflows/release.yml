@@ -34,6 +34,7 @@ jobs:
         # The description of the annotated tag becomes the release text,
         # prepended above the auto-generated changelog notes.
         run: |
+          TAG="$(echo "$TAG" | tr -d '[:space:]')"
           tag_message=$(git tag --list --format='%(contents)' "$TAG")
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
