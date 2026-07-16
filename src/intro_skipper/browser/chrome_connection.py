@@ -1,7 +1,12 @@
 import json
+from typing import Any
 
 import requests
-from websocket import WebSocket, WebSocketException, create_connection
+from websocket import (
+    WebSocket,
+    WebSocketException,
+    create_connection,  # pyright: ignore[reportUnknownVariableType]
+)
 
 from intro_skipper.browser.browser_connection import (
     BrowserCommunicationError,
@@ -32,7 +37,7 @@ class ChromeTab(BrowserTab):
             raise BrowserCommunicationError(str(error)) from error
         return evaluation_result.get("result", {}).get("value") is True
 
-    def _evaluate_javascript(self, javascript: str) -> dict:
+    def _evaluate_javascript(self, javascript: str) -> dict[str, Any]:
         # Chrome rejects websocket clients that send an Origin header (403),
         # so the header is suppressed entirely.
         connection = create_connection(
@@ -47,7 +52,7 @@ class ChromeTab(BrowserTab):
             connection.close()
 
     @staticmethod
-    def _build_evaluation_request(javascript: str) -> dict:
+    def _build_evaluation_request(javascript: str) -> dict[str, object]:
         return {
             "id": ChromeConstants.JAVASCRIPT_EVALUATION_REQUEST_ID,
             "method": "Runtime.evaluate",
@@ -55,9 +60,9 @@ class ChromeTab(BrowserTab):
         }
 
     @staticmethod
-    def _receive_evaluation_result(connection: WebSocket) -> dict:
+    def _receive_evaluation_result(connection: WebSocket) -> dict[str, Any]:
         while True:
-            message = json.loads(connection.recv())
+            message: dict[str, Any] = json.loads(connection.recv())
             if message.get("id") == ChromeConstants.JAVASCRIPT_EVALUATION_REQUEST_ID:
                 return message.get("result", {})
 
