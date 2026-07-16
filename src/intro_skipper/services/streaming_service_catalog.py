@@ -2,6 +2,7 @@ from intro_skipper.helpers.constants import (
     AmazonPrimeSelectors,
     DisneyPlusSelectors,
     NetflixSelectors,
+    StreamingServiceHomepages,
 )
 from intro_skipper.services.streaming_service import SkipTarget, StreamingService
 
@@ -10,6 +11,8 @@ def build_netflix() -> StreamingService:
     return StreamingService(
         name="Netflix",
         url_fragments=("netflix.com",),
+        homepage_url=StreamingServiceHomepages.NETFLIX,
+        command_line_aliases=("netflix",),
         skip_targets=(
             SkipTarget("skipped the intro", NetflixSelectors.SKIP_INTRO),
             SkipTarget("skipped the recap", NetflixSelectors.SKIP_RECAP),
@@ -26,6 +29,8 @@ def build_disney_plus() -> StreamingService:
     return StreamingService(
         name="Disney+",
         url_fragments=("disneyplus.com",),
+        homepage_url=StreamingServiceHomepages.DISNEY_PLUS,
+        command_line_aliases=("disney",),
         skip_targets=(
             SkipTarget(
                 "skipped the intro or recap",
@@ -40,6 +45,8 @@ def build_amazon_prime() -> StreamingService:
     return StreamingService(
         name="Amazon Prime Video",
         url_fragments=("amazon.", "primevideo.com"),
+        homepage_url=StreamingServiceHomepages.AMAZON_PRIME_VIDEO,
+        command_line_aliases=("amazon", "prime"),
         skip_targets=(
             SkipTarget(
                 "skipped the intro or recap",

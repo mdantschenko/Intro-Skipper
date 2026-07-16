@@ -26,5 +26,5 @@ class BrowserConnection(ABC):
         """Return every page tab the browser currently has open."""
 
     @abstractmethod
-    def open_new_tab(self) -> None:
-        """Open a new tab, creating a browser window if none exists."""
+    def open_new_tab(self, url: str = "") -> None:
+        """Open a new tab (blank by default), creating a window if none exists."""

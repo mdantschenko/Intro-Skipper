@@ -37,5 +37,5 @@ class FakeBrowserConnection(BrowserConnection):
             raise BrowserCommunicationError("Chrome does not answer.")
         return list(self.open_tabs)
 
-    def open_new_tab(self) -> None:
-        self.open_tabs.append(FakeBrowserTab("chrome://newtab/"))
+    def open_new_tab(self, url: str = "") -> None:
+        self.open_tabs.append(FakeBrowserTab(url or "chrome://newtab/"))

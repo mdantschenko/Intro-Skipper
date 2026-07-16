@@ -92,10 +92,11 @@ class ChromeConnection(BrowserConnection):
             if tab_description.get("type") == "page"
         ]
 
-    def open_new_tab(self) -> None:
+    def open_new_tab(self, url: str = "") -> None:
+        new_tab_url = f"{self._new_tab_url}?{url}" if url else self._new_tab_url
         try:
             requests.put(
-                self._new_tab_url,
+                new_tab_url,
                 timeout=ChromeConstants.HTTP_REQUEST_TIMEOUT_SECONDS,
             )
         except requests.RequestException as error:

@@ -11,6 +11,8 @@ class SkipTarget:
 class StreamingService:
     name: str
     url_fragments: tuple[str, ...]
+    homepage_url: str
+    command_line_aliases: tuple[str, ...]
     skip_targets: tuple[SkipTarget, ...]
 
     def matches_url(self, url: str) -> bool:

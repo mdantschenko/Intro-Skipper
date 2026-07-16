@@ -8,6 +8,13 @@ class ApplicationConstants:
     LOG_FILE_NAME_TEMPLATE = "intro_skipper_{start_time}.log"
     LOG_TIMESTAMP_FORMAT = "%Y-%m-%d_%H-%M-%S"
     LOG_MESSAGE_FORMAT = "%(asctime)s  %(message)s"
+    COMMAND_LINE_NAME_FOR_ALL_SERVICES = "all"
+
+
+class StreamingServiceHomepages:
+    NETFLIX = "https://www.netflix.com"
+    DISNEY_PLUS = "https://www.disneyplus.com"
+    AMAZON_PRIME_VIDEO = "https://www.amazon.de/gp/video/storefront"
 
 
 class ChromeConstants:

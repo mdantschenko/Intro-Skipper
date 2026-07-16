@@ -23,6 +23,16 @@ uv sync
 uv run python main.py
 ```
 
+Optional lassen sich Streaming-Dienste direkt beim Start öffnen:
+
+```
+uv run python main.py netflix           # öffnet Netflix
+uv run python main.py netflix disney    # öffnet Netflix und Disney+
+uv run python main.py all               # öffnet alle drei Dienste
+```
+
+Gültige Namen: `netflix`, `disney`, `amazon` (oder `prime`), `all`.
+
 Beim ersten Start öffnet sich ein frisches Chrome-Fenster mit eigenem Profil
 (`%LOCALAPPDATA%\IntroSkipper\ChromeProfile`) — dort einmalig bei Netflix, Disney+
 bzw. Amazon einloggen. Seit Chrome 136 erlaubt Chrome den Debugging-Port nicht mehr
