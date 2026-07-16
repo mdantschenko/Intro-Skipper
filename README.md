@@ -1,54 +1,55 @@
 # Intro Skipper
 
-Überspringt automatisch Intros, Rückblicke und Abspänne, während du Netflix, Disney+
-oder Amazon Prime Video im Chrome-Tab schaust und den Tab auf einen Chromecast streamst.
-Netflix' „Weiterschauen?"-Nachfrage wird ebenfalls automatisch bestätigt.
+Automatically skips intros, recaps and credits while you watch Netflix, Disney+
+or Amazon Prime Video in a Chrome tab and stream that tab to a Chromecast.
+Netflix' "Are you still watching?" prompt is confirmed automatically as well.
 
-## Funktionsweise
+## How it works
 
-Das Skript startet Chrome mit einem eigenen Profil und aktiviertem
-DevTools-Debugging-Port, beobachtet jede Sekunde alle offenen Tabs und klickt die
-Skip-Buttons der Streaming-Dienste, sobald sie sichtbar werden. Da das Video beim
-Tab-Streaming im Browser läuft, wirkt jeder Klick sofort auf dem Chromecast.
+The script starts Chrome with a dedicated profile and an enabled DevTools
+debugging port, watches every open tab once per second and clicks the skip
+buttons of the streaming services as soon as they become visible. Because the
+video runs inside the browser during tab streaming, every click takes effect
+on the Chromecast immediately.
 
-## Voraussetzungen
+## Requirements
 
-- Windows mit Google Chrome
+- Windows with Google Chrome
 - [uv](https://docs.astral.sh/uv/)
 
-## Starten
+## Getting started
 
 ```
 uv sync
 uv run python main.py
 ```
 
-Optional lassen sich Streaming-Dienste direkt beim Start öffnen:
+Streaming services can optionally be opened right at startup:
 
 ```
-uv run python main.py netflix           # öffnet Netflix
-uv run python main.py netflix disney    # öffnet Netflix und Disney+
-uv run python main.py all               # öffnet alle drei Dienste
+uv run python main.py netflix           # opens Netflix
+uv run python main.py netflix disney    # opens Netflix and Disney+
+uv run python main.py all               # opens all three services
 ```
 
-Gültige Namen: `netflix`, `disney`, `amazon` (oder `prime`), `all`.
+Valid names: `netflix`, `disney`, `amazon` (or `prime`), `all`.
 
-Beim ersten Start öffnet sich ein frisches Chrome-Fenster mit eigenem Profil
-(`%LOCALAPPDATA%\IntroSkipper\ChromeProfile`) — dort einmalig bei Netflix, Disney+
-bzw. Amazon einloggen. Seit Chrome 136 erlaubt Chrome den Debugging-Port nicht mehr
-für das Standard-Profil, deshalb ist das separate Profil notwendig.
+On the first start a fresh Chrome window opens with its own profile
+(`%LOCALAPPDATA%\IntroSkipper\ChromeProfile`) — log in to Netflix, Disney+ and
+Amazon there once. Since Chrome 136 the debugging port is no longer allowed on
+the default profile, which is why the separate profile is required.
 
-Danach: Serie in diesem Chrome-Fenster starten, im Chrome-Menü „Streamen…" wählen
-und den Tab an den Chromecast senden. Jede übersprungene Stelle erscheint als
-Log-Zeile in der Konsole und wird zusätzlich in einer Log-Datei unter `logs/`
-dokumentiert (eine Datei pro Lauf). Das Skript beendet sich automatisch, sobald
-du das letzte Chrome-Fenster schließt — auch wenn Chrome danach unsichtbar im
-Hintergrund weiterläuft; Strg+C funktioniert weiterhin.
+After that: start an episode in this Chrome window, pick "Cast…" from the
+Chrome menu and send the tab to the Chromecast. Every skipped moment shows up
+as a log line in the console and is also documented in a log file under
+`logs/` (one file per run). The script stops automatically as soon as you
+close the last Chrome window — even if Chrome keeps running invisibly in the
+background; Ctrl+C keeps working too.
 
-Ändert ein Dienst seinen Player, müssen nur die CSS-Selektoren in
-`src/intro_skipper/helpers/constants.py` angepasst werden.
+If a service changes its player, only the CSS selectors in
+`src/intro_skipper/helpers/constants.py` need updating.
 
-## Qualitätswerkzeuge
+## Quality tools
 
 ```
 uv run pytest
@@ -61,7 +62,7 @@ uv run pydeps src/intro_skipper --noshow -o dependency_graph.svg
 uv run --with pyright pyright
 ```
 
-Der Skylos-Volldurchlauf (`-a`) prüft neben Dead Code auch Security, Secrets,
-Qualität, AI-Defects und bekannte Lücken in den Abhängigkeiten; die
-projektspezifischen Regeln dazu stehen in der `[tool.skylos]`-Sektion der
+The full skylos scan (`-a`) checks security, secrets, code quality, AI defect
+heuristics and known dependency vulnerabilities in addition to dead code; the
+project-specific rules for it live in the `[tool.skylos]` section of
 `pyproject.toml`.
