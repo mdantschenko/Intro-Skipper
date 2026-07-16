@@ -63,26 +63,52 @@ class VideoControlJavaScript:
             return true;
         })()
     """
-    JUMP_TEMPLATE = """
+    # Netflix rejects direct changes to video.currentTime with error M7375;
+    # its internal player API has to seek instead (in milliseconds).
+    _SEEK_FUNCTION = """
+            const seekToSeconds = (targetSeconds) => {
+                if (typeof netflix !== "undefined") {
+                    const videoPlayer =
+                        netflix.appContext.state.playerApp.getAPI().videoPlayer;
+                    const sessionId = videoPlayer.getAllPlayerSessionIds()[0];
+                    videoPlayer
+                        .getVideoPlayerBySessionId(sessionId)
+                        .seek(targetSeconds * 1000);
+                    return;
+                }
+                video.currentTime = targetSeconds;
+            };
+    """
+    JUMP_TEMPLATE = (
+        """
         (() => {
             const video = document.querySelector("video");
             if (video === null) {
                 return false;
             }
-            video.currentTime = Math.max(0, video.currentTime + __SECONDS__);
+    """
+        + _SEEK_FUNCTION
+        + """
+            seekToSeconds(Math.max(0, video.currentTime + __SECONDS__));
             return true;
         })()
     """
-    SEEK_TEMPLATE = """
+    )
+    SEEK_TEMPLATE = (
+        """
         (() => {
             const video = document.querySelector("video");
             if (video === null) {
                 return false;
             }
-            video.currentTime = __POSITION_SECONDS__;
+    """
+        + _SEEK_FUNCTION
+        + """
+            seekToSeconds(Math.max(0, __POSITION_SECONDS__));
             return true;
         })()
     """
+    )
 
 
 class UpdateCheckConstants:

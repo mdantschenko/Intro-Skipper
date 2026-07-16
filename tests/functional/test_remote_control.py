@@ -5,11 +5,12 @@ from typing import Any, Iterator
 
 import pytest
 
+from intro_skipper.helpers.enums import SkipKind
 from intro_skipper.remote_control import RemoteControlServer
 from intro_skipper.services.streaming_service_catalog import (
     build_all_streaming_services,
 )
-from intro_skipper.skipping_switch import SkippingSwitch
+from intro_skipper.skipping_settings import SkippingSettings
 from tests.functional.browser_fakes import FakeBrowserConnection, FakeBrowserTab
 
 NETFLIX_EPISODE_URL = "https://www.netflix.com/watch/81091393"
@@ -28,7 +29,7 @@ def netflix_tab() -> FakeBrowserTab:
     return browser_tab
 
 
-RunningServer = tuple[RemoteControlServer, SkippingSwitch]
+RunningServer = tuple[RemoteControlServer, SkippingSettings]
 
 
 @pytest.fixture
@@ -36,12 +37,12 @@ def running_server(
     netflix_tab: FakeBrowserTab,
 ) -> Iterator[RunningServer]:
     browser_connection = FakeBrowserConnection(open_tabs=[netflix_tab])
-    skipping_switch = SkippingSwitch()
+    skipping_settings = SkippingSettings()
     server = RemoteControlServer(
-        browser_connection, build_all_streaming_services(), skipping_switch, port=0
+        browser_connection, build_all_streaming_services(), skipping_settings, port=0
     )
     server.start_in_background()
-    yield server, skipping_switch
+    yield server, skipping_settings
     server.shut_down()
 
 
@@ -78,16 +79,30 @@ def test_the_remote_page_is_served(running_server: RunningServer) -> None:
 def test_the_state_reports_video_and_skipping(running_server: RunningServer) -> None:
     server, _ = running_server
     state = read_json(server, "/state")
-    assert state["skipping_enabled"] is True
+    assert state["skipping"] == {
+        "intro": True,
+        "recap": True,
+        "next_episode": True,
+        "still_watching": True,
+    }
     assert state["video"]["position_seconds"] == 125.0
     assert state["video"]["duration_seconds"] == 2700.0
 
 
-def test_toggle_skipping_flips_the_switch(running_server: RunningServer) -> None:
-    server, skipping_switch = running_server
-    post_command(server, {"action": "toggle_skipping"})
-    assert skipping_switch.enabled is False
-    assert read_json(server, "/state")["skipping_enabled"] is False
+def test_toggling_one_skip_kind_leaves_the_others_alone(
+    running_server: RunningServer,
+) -> None:
+    server, skipping_settings = running_server
+    post_command(server, {"action": "toggle_skipping", "kind": "intro"})
+    assert skipping_settings.is_enabled_for_any((SkipKind.INTRO,)) is False
+    skipping_state = read_json(server, "/state")["skipping"]
+    assert skipping_state["intro"] is False
+    assert skipping_state["recap"] is True
+
+
+def test_an_unknown_skip_kind_is_rejected(running_server: RunningServer) -> None:
+    server, _ = running_server
+    assert post_command(server, {"action": "toggle_skipping", "kind": "ads"}) == 400
 
 
 def test_playback_commands_reach_the_video_tab(
@@ -100,8 +115,9 @@ def test_playback_commands_reach_the_video_tab(
     post_command(server, {"action": "volume_up"})
     executed = "".join(netflix_tab.evaluated_javascript)
     assert "video.play()" in executed
-    assert "video.currentTime = Math.max(0, video.currentTime + -10.0)" in executed
-    assert "video.currentTime = 300.0" in executed
+    assert "seekToSeconds(Math.max(0, video.currentTime + -10.0))" in executed
+    assert "seekToSeconds(Math.max(0, 300.0))" in executed
+    assert "getVideoPlayerBySessionId" in executed
     assert "video.volume" in executed
 
 

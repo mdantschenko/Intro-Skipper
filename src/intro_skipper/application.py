@@ -8,7 +8,7 @@ from intro_skipper.browser.browser_connection import (
 )
 from intro_skipper.helpers.constants import ApplicationConstants
 from intro_skipper.services.streaming_service import StreamingService
-from intro_skipper.skipping_switch import SkippingSwitch
+from intro_skipper.skipping_settings import SkippingSettings
 
 
 class IntroSkipperApplication:
@@ -16,11 +16,11 @@ class IntroSkipperApplication:
         self,
         browser_connection: BrowserConnection,
         streaming_services: tuple[StreamingService, ...],
-        skipping_switch: SkippingSwitch | None = None,
+        skipping_settings: SkippingSettings | None = None,
     ) -> None:
         self._browser_connection = browser_connection
         self._streaming_services = streaming_services
-        self._skipping_switch = skipping_switch or SkippingSwitch()
+        self._skipping_settings = skipping_settings or SkippingSettings()
         self._logger = logging.getLogger(ApplicationConstants.LOGGER_NAME)
         self._browser_had_open_tabs = False
 
@@ -30,9 +30,8 @@ class IntroSkipperApplication:
 
     def run_single_pass(self) -> int:
         open_tabs = self._browser_connection.list_open_tabs()
-        if self._skipping_switch.enabled:
-            for browser_tab in open_tabs:
-                self._skip_inside_tab(browser_tab)
+        for browser_tab in open_tabs:
+            self._skip_inside_tab(browser_tab)
         return len(open_tabs)
 
     def _execute_polling_pass(self) -> bool:
@@ -71,6 +70,8 @@ class IntroSkipperApplication:
         self, browser_tab: BrowserTab, streaming_service: StreamingService
     ) -> None:
         for skip_target in streaming_service.skip_targets:
+            if not self._skipping_settings.is_enabled_for_any(skip_target.kinds):
+                continue
             if browser_tab.click_first_visible_element(skip_target.css_selector):
                 self._logger.info(
                     "%s: %s", streaming_service.name, skip_target.description

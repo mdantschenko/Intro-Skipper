@@ -11,7 +11,8 @@ from intro_skipper.helpers.constants import (
 from intro_skipper.services.streaming_service_catalog import (
     build_all_streaming_services,
 )
-from intro_skipper.skipping_switch import SkippingSwitch
+from intro_skipper.helpers.enums import SkipKind
+from intro_skipper.skipping_settings import SkippingSettings
 from tests.functional.browser_fakes import FakeBrowserConnection, FakeBrowserTab
 
 NETFLIX_EPISODE_URL = "https://www.netflix.com/watch/81091393"
@@ -96,16 +97,19 @@ class WindowClosingBrowserConnection(FakeBrowserConnection):
         return open_tabs
 
 
-def test_nothing_is_clicked_while_skipping_is_switched_off() -> None:
-    netflix_tab = FakeBrowserTab(NETFLIX_EPISODE_URL, {NetflixSelectors.SKIP_INTRO})
+def test_a_disabled_skip_kind_is_not_clicked_while_others_still_are() -> None:
+    netflix_tab = FakeBrowserTab(
+        NETFLIX_EPISODE_URL,
+        {NetflixSelectors.SKIP_INTRO, NetflixSelectors.SKIP_RECAP},
+    )
     browser_connection = FakeBrowserConnection(open_tabs=[netflix_tab])
-    skipping_switch = SkippingSwitch()
-    skipping_switch.toggle()
+    skipping_settings = SkippingSettings()
+    skipping_settings.toggle(SkipKind.INTRO)
     application = IntroSkipperApplication(
-        browser_connection, build_all_streaming_services(), skipping_switch
+        browser_connection, build_all_streaming_services(), skipping_settings
     )
     application.run_single_pass()
-    assert netflix_tab.clicked_css_selectors == []
+    assert netflix_tab.clicked_css_selectors == [NetflixSelectors.SKIP_RECAP]
 
 
 def test_application_stops_when_chrome_is_closed() -> None:

@@ -17,7 +17,7 @@ from intro_skipper.remote_control import RemoteControlServer
 from intro_skipper.services.streaming_service_catalog import (
     build_all_streaming_services,
 )
-from intro_skipper.skipping_switch import SkippingSwitch
+from intro_skipper.skipping_settings import SkippingSettings
 from intro_skipper.update_notification import build_update_notification
 
 
@@ -34,18 +34,19 @@ def main() -> None:
         chrome_connection, command_line_options.streaming_services, logger
     )
 
-    skipping_switch = SkippingSwitch()
+    skipping_settings = SkippingSettings()
     remote_control_server = RemoteControlServer(
-        chrome_connection, build_all_streaming_services(), skipping_switch
+        chrome_connection, build_all_streaming_services(), skipping_settings
     )
     remote_control_server.start_in_background()
+    page_addresses = remote_control_server.build_page_addresses()
     logger.info(
         "Phone remote: open %s in your phone browser (same WLAN).",
-        remote_control_server.build_page_address(),
+        " or ".join(page_addresses),
     )
 
     application = IntroSkipperApplication(
-        chrome_connection, build_all_streaming_services(), skipping_switch
+        chrome_connection, build_all_streaming_services(), skipping_settings
     )
     try:
         application.run_forever()

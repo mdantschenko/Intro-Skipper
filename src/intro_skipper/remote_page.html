@@ -32,12 +32,15 @@
   header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.4px; }
   header .status { font-size: 12px; color: var(--muted); }
 
+  .skip-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+  }
   .skip-row {
     display: flex; justify-content: space-between; align-items: center;
     background: var(--surface); border: 1px solid var(--line);
-    border-radius: 12px; padding: 14px 16px;
+    border-radius: 12px; padding: 12px 12px;
   }
-  .skip-row span { font-size: 14px; }
+  .skip-row span { font-size: 13px; }
   .switch { position: relative; width: 46px; height: 26px; }
   .switch input { opacity: 0; width: 0; height: 0; }
   .slider {
@@ -116,12 +119,35 @@
     <span class="status" id="connection-status">connecting…</span>
   </header>
 
-  <div class="skip-row">
-    <span>Skip intros &amp; recaps automatically</span>
-    <label class="switch">
-      <input type="checkbox" id="skip-toggle" checked>
-      <span class="slider"></span>
-    </label>
+  <div class="skip-grid">
+    <div class="skip-row">
+      <span>Skip intros</span>
+      <label class="switch">
+        <input type="checkbox" class="skip-toggle" data-kind="intro" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="skip-row">
+      <span>Skip recaps</span>
+      <label class="switch">
+        <input type="checkbox" class="skip-toggle" data-kind="recap" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="skip-row">
+      <span>Next episode</span>
+      <label class="switch">
+        <input type="checkbox" class="skip-toggle" data-kind="next_episode" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="skip-row">
+      <span>"Still watching?"</span>
+      <label class="switch">
+        <input type="checkbox" class="skip-toggle" data-kind="still_watching" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
   </div>
 
   <div class="touchpad" id="touchpad">
@@ -150,7 +176,7 @@
   const seekBar = document.getElementById("seek-bar");
   const timePosition = document.getElementById("time-position");
   const timeDuration = document.getElementById("time-duration");
-  const skipToggle = document.getElementById("skip-toggle");
+  const skipToggles = document.querySelectorAll(".skip-toggle");
   const connectionStatus = document.getElementById("connection-status");
   const noVideoNote = document.getElementById("no-video");
   const touchpad = document.getElementById("touchpad");
@@ -177,7 +203,9 @@
 
   function applyState(state) {
     connectionStatus.textContent = "connected";
-    skipToggle.checked = state.skipping_enabled;
+    skipToggles.forEach((toggle) => {
+      toggle.checked = state.skipping[toggle.dataset.kind];
+    });
     const video = state.video;
     noVideoNote.style.display = video ? "none" : "block";
     if (!video) return;
@@ -207,8 +235,9 @@
   document.getElementById("volume-up").addEventListener("click", () =>
     sendCommand({ action: "volume_up" }));
 
-  skipToggle.addEventListener("change", () =>
-    sendCommand({ action: "toggle_skipping" }));
+  skipToggles.forEach((toggle) =>
+    toggle.addEventListener("change", () =>
+      sendCommand({ action: "toggle_skipping", kind: toggle.dataset.kind })));
 
   seekBar.addEventListener("input", () => {
     scrubbing = true;

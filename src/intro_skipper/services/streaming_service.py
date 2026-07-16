@@ -1,10 +1,13 @@
 from dataclasses import dataclass
 
+from intro_skipper.helpers.enums import SkipKind
+
 
 @dataclass(frozen=True)
 class SkipTarget:
     description: str
     css_selector: str
+    kinds: tuple[SkipKind, ...]
 
 
 @dataclass(frozen=True)

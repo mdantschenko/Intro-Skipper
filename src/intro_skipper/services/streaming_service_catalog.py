@@ -5,6 +5,7 @@ from intro_skipper.helpers.constants import (
     SkipTargetDescriptions,
     StreamingServiceHomepages,
 )
+from intro_skipper.helpers.enums import SkipKind
 from intro_skipper.services.streaming_service import SkipTarget, StreamingService
 
 
@@ -18,18 +19,22 @@ def build_netflix() -> StreamingService:
             SkipTarget(
                 SkipTargetDescriptions.SKIPPED_INTRO,
                 NetflixSelectors.SKIP_INTRO,
+                kinds=(SkipKind.INTRO,),
             ),
             SkipTarget(
                 SkipTargetDescriptions.SKIPPED_RECAP,
                 NetflixSelectors.SKIP_RECAP,
+                kinds=(SkipKind.RECAP,),
             ),
             SkipTarget(
                 SkipTargetDescriptions.STARTED_NEXT_EPISODE,
                 NetflixSelectors.NEXT_EPISODE,
+                kinds=(SkipKind.NEXT_EPISODE,),
             ),
             SkipTarget(
                 SkipTargetDescriptions.CONFIRMED_STILL_WATCHING,
                 NetflixSelectors.CONTINUE_WATCHING,
+                kinds=(SkipKind.STILL_WATCHING,),
             ),
         ),
     )
@@ -45,10 +50,12 @@ def build_disney_plus() -> StreamingService:
             SkipTarget(
                 SkipTargetDescriptions.SKIPPED_INTRO_OR_RECAP,
                 DisneyPlusSelectors.SKIP_INTRO_OR_RECAP,
+                kinds=(SkipKind.INTRO, SkipKind.RECAP),
             ),
             SkipTarget(
                 SkipTargetDescriptions.STARTED_NEXT_EPISODE,
                 DisneyPlusSelectors.NEXT_EPISODE,
+                kinds=(SkipKind.NEXT_EPISODE,),
             ),
         ),
     )
@@ -64,10 +71,12 @@ def build_amazon_prime() -> StreamingService:
             SkipTarget(
                 SkipTargetDescriptions.SKIPPED_INTRO_OR_RECAP,
                 AmazonPrimeSelectors.SKIP_INTRO_OR_RECAP,
+                kinds=(SkipKind.INTRO, SkipKind.RECAP),
             ),
             SkipTarget(
                 SkipTargetDescriptions.STARTED_NEXT_EPISODE,
                 AmazonPrimeSelectors.NEXT_EPISODE,
+                kinds=(SkipKind.NEXT_EPISODE,),
             ),
         ),
     )

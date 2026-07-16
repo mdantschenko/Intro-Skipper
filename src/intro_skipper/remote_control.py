@@ -14,8 +14,9 @@ from intro_skipper.helpers.constants import (
     RemoteControlConstants,
     VideoControlJavaScript,
 )
+from intro_skipper.helpers.enums import SkipKind
 from intro_skipper.services.streaming_service import StreamingService
-from intro_skipper.skipping_switch import SkippingSwitch
+from intro_skipper.skipping_settings import SkippingSettings
 
 
 class RemoteControlServer:
@@ -23,12 +24,12 @@ class RemoteControlServer:
         self,
         browser_connection: BrowserConnection,
         streaming_services: tuple[StreamingService, ...],
-        skipping_switch: SkippingSwitch,
+        skipping_settings: SkippingSettings,
         port: int = RemoteControlConstants.PORT,
     ) -> None:
         self._browser_connection = browser_connection
         self._streaming_services = streaming_services
-        self._skipping_switch = skipping_switch
+        self._skipping_settings = skipping_settings
         self._http_server = ThreadingHTTPServer(
             ("", port), _RemoteControlRequestHandler
         )
@@ -47,20 +48,23 @@ class RemoteControlServer:
     def shut_down(self) -> None:
         self._http_server.shutdown()
 
-    def build_page_address(self) -> str:
-        return f"http://{find_local_network_address()}:{self.port}"
+    def build_page_addresses(self) -> list[str]:
+        return [
+            f"http://{address}:{self.port}"
+            for address in find_local_network_addresses()
+        ]
 
     def describe_state(self) -> dict[str, Any]:
         video_state = self._read_video_state()
         return {
-            "skipping_enabled": self._skipping_switch.enabled,
+            "skipping": self._skipping_settings.describe(),
             "video": video_state,
         }
 
     def execute_command(self, command: dict[str, Any]) -> None:
         action = command.get("action")
         if action == "toggle_skipping":
-            self._skipping_switch.toggle()
+            self._skipping_settings.toggle(SkipKind(str(command.get("kind", ""))))
             return
         self._run_video_javascript(_build_video_javascript(action, command))
 
@@ -141,15 +145,25 @@ def _build_video_javascript(action: object, command: dict[str, Any]) -> str:
     return javascript_builder(command)
 
 
-def find_local_network_address() -> str:
-    probe_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+def find_local_network_addresses() -> list[str]:
+    """Collects the machine's IPv4 addresses, home network (192.168.x) first,
+    because a VPN tunnel address would be unreachable for the phone."""
     try:
-        probe_socket.connect(("8.8.8.8", 80))
-        return str(probe_socket.getsockname()[0])
+        address_infos = socket.getaddrinfo(socket.gethostname(), None, socket.AF_INET)
     except OSError:
-        return "localhost"
-    finally:
-        probe_socket.close()
+        return ["localhost"]
+    addresses = {str(address_info[4][0]) for address_info in address_infos}
+    return _prefer_home_network_addresses(addresses) or ["localhost"]
+
+
+def _prefer_home_network_addresses(addresses: set[str]) -> list[str]:
+    usable_addresses = [
+        address for address in addresses if not address.startswith(("127.", "169.254."))
+    ]
+    usable_addresses.sort(
+        key=lambda address: (not address.startswith("192.168."), address)
+    )
+    return usable_addresses
 
 
 class _RemoteControlRequestHandler(BaseHTTPRequestHandler):
