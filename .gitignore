@@ -4,4 +4,4 @@ __pycache__/
 .pytest_cache/
 .skylos/
 *.egg-info/
-dependency_graph.svg
+.complexipy_cache
