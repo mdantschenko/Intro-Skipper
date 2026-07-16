@@ -9,14 +9,18 @@ from intro_skipper.browser.browser_connection import (
     BrowserCommunicationError,
     BrowserConnection,
     BrowserTab,
+    ScreencastHandle,
 )
 from intro_skipper.helpers.constants import (
+    JavaScriptSnippets,
+    PlayerControlSelectors,
     RemoteControlConstants,
     VideoControlJavaScript,
 )
 from intro_skipper.helpers.enums import SkipKind
 from intro_skipper.services.streaming_service import StreamingService
 from intro_skipper.skipping_settings import SkippingSettings
+from intro_skipper.streaming_tab_finder import StreamingTabFinder
 
 
 class RemoteControlServer:
@@ -27,13 +31,15 @@ class RemoteControlServer:
         skipping_settings: SkippingSettings,
         port: int = RemoteControlConstants.PORT,
     ) -> None:
-        self._browser_connection = browser_connection
-        self._streaming_services = streaming_services
+        self._tab_finder = StreamingTabFinder(browser_connection, streaming_services)
         self._skipping_settings = skipping_settings
         self._http_server = ThreadingHTTPServer(
             ("", port), _RemoteControlRequestHandler
         )
         self._http_server.remote_control = self  # type: ignore[attr-defined]
+        self._screencast: ScreencastHandle | None = None
+        self._screencast_tab_identifier: str | None = None
+        self._screencast_lock = threading.Lock()
 
     @property
     def port(self) -> int:
@@ -46,6 +52,7 @@ class RemoteControlServer:
         server_thread.start()
 
     def shut_down(self) -> None:
+        self._stop_screencast()
         self._http_server.shutdown()
 
     def build_page_addresses(self) -> list[str]:
@@ -62,14 +69,80 @@ class RemoteControlServer:
         }
 
     def execute_command(self, command: dict[str, Any]) -> None:
-        action = command.get("action")
-        if action == "toggle_skipping":
-            self._skipping_settings.toggle(SkipKind(str(command.get("kind", ""))))
+        action = str(command.get("action"))
+        control_handler = self._control_handlers().get(action)
+        if control_handler is not None:
+            control_handler(command)
             return
         self._run_video_javascript(_build_video_javascript(action, command))
 
+    def _control_handlers(self) -> dict[str, Callable[[dict[str, Any]], None]]:
+        return {
+            "toggle_skipping": self._toggle_skipping,
+            "navigate_home": self._navigate_home,
+            "tap": self._tap_on_service_tab,
+            "scroll": self._scroll_service_tab,
+            "stop_live_view": self._stop_live_view,
+        }
+
+    def _toggle_skipping(self, command: dict[str, Any]) -> None:
+        self._skipping_settings.toggle(SkipKind(str(command.get("kind", ""))))
+
+    def _navigate_home(self, _command: dict[str, Any]) -> None:  # skylos: ignore
+        service_tab = self._tab_finder.find_service_tab()
+        streaming_service = self._tab_finder.find_streaming_service_for(service_tab)
+        if service_tab is None or streaming_service is None:
+            return
+        service_tab.evaluate_javascript(
+            JavaScriptSnippets.NAVIGATE_TEMPLATE.replace(
+                "__TARGET_URL__", json.dumps(streaming_service.homepage_url)
+            )
+        )
+
+    def _tap_on_service_tab(self, command: dict[str, Any]) -> None:
+        service_tab = self._tab_finder.find_service_tab()
+        if service_tab is not None:
+            service_tab.tap_at_fraction(
+                float(command.get("x_fraction", 0.5)),
+                float(command.get("y_fraction", 0.5)),
+            )
+
+    def _scroll_service_tab(self, command: dict[str, Any]) -> None:
+        service_tab = self._tab_finder.find_service_tab()
+        if service_tab is not None:
+            service_tab.scroll_by(float(command.get("delta_y", 0)))
+
+    def _stop_live_view(self, _command: dict[str, Any]) -> None:  # skylos: ignore
+        self._stop_screencast()
+
+    def read_live_frame(self) -> bytes | None:
+        service_tab = self._tab_finder.find_service_tab()
+        if service_tab is None:
+            return None
+        screencast = self._ensure_screencast(service_tab)
+        return screencast.latest_frame() or service_tab.capture_screenshot()
+
+    def _ensure_screencast(self, service_tab: BrowserTab) -> ScreencastHandle:
+        with self._screencast_lock:
+            if (
+                self._screencast is None
+                or self._screencast_tab_identifier != service_tab.identifier
+            ):
+                if self._screencast is not None:
+                    self._screencast.stop()
+                self._screencast = service_tab.open_screencast()
+                self._screencast_tab_identifier = service_tab.identifier
+            return self._screencast
+
+    def _stop_screencast(self) -> None:
+        with self._screencast_lock:
+            if self._screencast is not None:
+                self._screencast.stop()
+                self._screencast = None
+                self._screencast_tab_identifier = None
+
     def _read_video_state(self) -> dict[str, Any] | None:
-        video_tab = self._find_video_tab()
+        video_tab = self._tab_finder.find_video_tab()
         if video_tab is None:
             return None
         state = video_tab.evaluate_javascript(VideoControlJavaScript.READ_STATE)
@@ -78,31 +151,9 @@ class RemoteControlServer:
         return cast(dict[str, Any], state)
 
     def _run_video_javascript(self, javascript: str) -> None:
-        video_tab = self._find_video_tab()
+        video_tab = self._tab_finder.find_video_tab()
         if video_tab is not None:
             video_tab.evaluate_javascript(javascript)
-
-    def _find_video_tab(self) -> BrowserTab | None:
-        try:
-            open_tabs = self._browser_connection.list_open_tabs()
-        except BrowserCommunicationError:
-            return None
-        for browser_tab in open_tabs:
-            if self._shows_a_streaming_video(browser_tab):
-                return browser_tab
-        return None
-
-    def _shows_a_streaming_video(self, browser_tab: BrowserTab) -> bool:
-        if not any(
-            streaming_service.matches_url(browser_tab.url)
-            for streaming_service in self._streaming_services
-        ):
-            return False
-        try:
-            state = browser_tab.evaluate_javascript(VideoControlJavaScript.READ_STATE)
-        except BrowserCommunicationError:
-            return False
-        return isinstance(state, dict)
 
 
 def _build_volume_javascript(volume_step: float) -> str:
@@ -134,6 +185,11 @@ _VIDEO_JAVASCRIPT_BUILDERS: dict[str, Callable[[dict[str, Any]], str]] = {
     "jump": lambda command: _build_jump_javascript(float(command.get("seconds", 0))),
     "seek": lambda command: _build_seek_javascript(
         float(command.get("position_seconds", 0))
+    ),
+    "restart_episode": lambda command: _build_seek_javascript(0.0),
+    "next_episode": lambda command: JavaScriptSnippets.CLICK_FIRST_MATCH_TEMPLATE.replace(
+        "__CSS_SELECTORS__",
+        json.dumps(list(PlayerControlSelectors.NEXT_EPISODE_BUTTONS)),
     ),
 }
 
@@ -171,7 +227,17 @@ class _RemoteControlRequestHandler(BaseHTTPRequestHandler):
         if self.path == "/state":
             self._send_json(self._remote_control().describe_state())
             return
+        if self.path.startswith("/screenshot"):
+            self._send_live_frame()
+            return
         self._send_page()
+
+    def _send_live_frame(self) -> None:
+        live_frame = self._remote_control().read_live_frame()
+        if live_frame is None:
+            self._send_json({"error": "no streaming tab open"}, status=404)
+            return
+        self._send_payload(live_frame, content_type="image/jpeg")
 
     def do_POST(self) -> None:
         body_length = int(

@@ -31,6 +31,41 @@
   header { display: flex; justify-content: space-between; align-items: center; }
   header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.4px; }
   header .status { font-size: 12px; color: var(--muted); }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  #browse-button {
+    padding: 7px 14px; font-size: 13px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--line); border-radius: 9px; cursor: pointer;
+  }
+  #browse-button:active { border-color: var(--accent); color: var(--accent); }
+
+  .episode-row { display: flex; gap: 12px; }
+  .episode-row button {
+    flex: 1; padding: 13px 0; font-size: 14px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--line); border-radius: 12px; cursor: pointer;
+  }
+  .episode-row button:active { border-color: var(--accent); color: var(--accent); }
+
+  #live-view {
+    position: fixed; inset: 0; background: #000;
+    display: none; flex-direction: column; z-index: 10;
+  }
+  #live-view.active { display: flex; }
+  .live-top {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+  }
+  #live-back {
+    padding: 8px 14px; font-size: 13px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--line); border-radius: 9px; cursor: pointer;
+  }
+  .live-top span { font-size: 12px; color: var(--muted); }
+  #live-image {
+    width: 100%; flex: 1; object-fit: contain;
+    touch-action: none; background: #000;
+  }
 
   .skip-grid {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -128,7 +163,10 @@
 <body>
   <header>
     <h1>Intro Skipper</h1>
-    <span class="status" id="connection-status">connecting…</span>
+    <div class="header-right">
+      <button id="browse-button">Browse</button>
+      <span class="status" id="connection-status">connecting…</span>
+    </div>
   </header>
 
   <div class="skip-grid">
@@ -180,10 +218,23 @@
     <div class="times"><span id="time-position">0:00</span><span id="time-duration">0:00</span></div>
   </div>
 
+  <div class="episode-row">
+    <button id="restart-episode">&#8634;&nbsp;Restart episode</button>
+    <button id="next-episode">Next episode&nbsp;&#9197;</button>
+  </div>
+
   <div class="volume-row">
     <button id="volume-down" aria-label="Volume down">&#128265;&nbsp;&#8722;</button>
     <span id="volume-percent">&ndash;</span>
     <button id="volume-up" aria-label="Volume up">&#128266;&nbsp;+</button>
+  </div>
+
+  <div id="live-view">
+    <div class="live-top">
+      <button id="live-back">&#8249; Controls</button>
+      <span>tap to click &middot; drag to scroll</span>
+    </div>
+    <img id="live-image" alt="Live view of the streaming tab">
   </div>
 
 <script>
@@ -221,6 +272,7 @@
 
   function applyState(state) {
     connectionStatus.textContent = "connected";
+    maybeReturnFromLiveView(state);
     skipToggles.forEach((toggle) => {
       toggle.checked = state.skipping[toggle.dataset.kind];
     });
@@ -265,6 +317,89 @@
     flashJump("right");
     sendCommand({ action: "jump", seconds: 10 });
   });
+
+  document.getElementById("restart-episode").addEventListener("click", () =>
+    sendCommand({ action: "restart_episode" }));
+  document.getElementById("next-episode").addEventListener("click", () =>
+    sendCommand({ action: "next_episode" }));
+
+  // ----- live browse view -----
+  const liveView = document.getElementById("live-view");
+  const liveImage = document.getElementById("live-image");
+  const AUTO_RETURN_MINIMUM_DURATION_SECONDS = 300;
+  let liveViewActive = false;
+  let dragStart = null;
+  let dragMoved = false;
+
+  function enterLiveView() {
+    liveViewActive = true;
+    liveView.classList.add("active");
+    refreshLiveFrame();
+  }
+
+  function leaveLiveView() {
+    liveViewActive = false;
+    liveView.classList.remove("active");
+    sendCommand({ action: "stop_live_view" });
+  }
+
+  function refreshLiveFrame() {
+    if (!liveViewActive) return;
+    fetch("/screenshot?" + Date.now())
+      .then((response) => (response.ok ? response.blob() : null))
+      .then((blob) => {
+        if (blob && liveViewActive) {
+          const previousSource = liveImage.src;
+          liveImage.src = URL.createObjectURL(blob);
+          if (previousSource.startsWith("blob:")) URL.revokeObjectURL(previousSource);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setTimeout(refreshLiveFrame, 90));
+  }
+
+  document.getElementById("browse-button").addEventListener("click", () => {
+    sendCommand({ action: "navigate_home" });
+    enterLiveView();
+  });
+  document.getElementById("live-back").addEventListener("click", leaveLiveView);
+
+  function imageFractions(event) {
+    const bounds = liveImage.getBoundingClientRect();
+    return {
+      x: (event.clientX - bounds.left) / bounds.width,
+      y: (event.clientY - bounds.top) / bounds.height,
+    };
+  }
+
+  liveImage.addEventListener("pointerdown", (event) => {
+    dragStart = { x: event.clientX, y: event.clientY };
+    dragMoved = false;
+  });
+  liveImage.addEventListener("pointermove", (event) => {
+    if (dragStart === null) return;
+    const deltaY = dragStart.y - event.clientY;
+    if (Math.abs(deltaY) > 14) {
+      dragMoved = true;
+      sendCommand({ action: "scroll", delta_y: deltaY * 3 });
+      dragStart = { x: event.clientX, y: event.clientY };
+    }
+  });
+  liveImage.addEventListener("pointerup", (event) => {
+    if (dragStart !== null && !dragMoved) {
+      const fractions = imageFractions(event);
+      sendCommand({ action: "tap", x_fraction: fractions.x, y_fraction: fractions.y });
+    }
+    dragStart = null;
+  });
+
+  function maybeReturnFromLiveView(state) {
+    const video = state.video;
+    if (liveViewActive && video && !video.paused &&
+        video.duration_seconds > AUTO_RETURN_MINIMUM_DURATION_SECONDS) {
+      leaveLiveView();
+    }
+  }
 
   skipToggles.forEach((toggle) =>
     toggle.addEventListener("change", () =>

@@ -77,6 +77,10 @@ def test_the_remote_page_is_served(running_server: RunningServer) -> None:
     assert "jump-back" in page
     assert "jump-forward" in page
     assert "volume-percent" in page
+    assert "live-view" in page
+    assert "restart-episode" in page
+    assert "next-episode" in page
+    assert "browse-button" in page
 
 
 def test_the_state_reports_video_and_skipping(running_server: RunningServer) -> None:
@@ -127,3 +131,52 @@ def test_playback_commands_reach_the_video_tab(
 def test_an_unknown_action_is_rejected(running_server: RunningServer) -> None:
     server, _ = running_server
     assert post_command(server, {"action": "explode"}) == 400
+
+
+def test_the_live_frame_is_served_from_the_screencast(
+    running_server: RunningServer, netflix_tab: FakeBrowserTab
+) -> None:
+    server, _ = running_server
+    assert read_response(server, "/screenshot") == b"fake-jpeg-frame"
+    assert len(netflix_tab.opened_screencasts) == 1
+
+
+def test_stop_live_view_ends_the_screencast(
+    running_server: RunningServer, netflix_tab: FakeBrowserTab
+) -> None:
+    server, _ = running_server
+    read_response(server, "/screenshot")
+    post_command(server, {"action": "stop_live_view"})
+    assert netflix_tab.opened_screencasts[0].stopped is True
+
+
+def test_taps_and_scrolls_reach_the_service_tab(
+    running_server: RunningServer, netflix_tab: FakeBrowserTab
+) -> None:
+    server, _ = running_server
+    post_command(server, {"action": "tap", "x_fraction": 0.25, "y_fraction": 0.75})
+    post_command(server, {"action": "scroll", "delta_y": 120})
+    assert netflix_tab.taps == [(0.25, 0.75)]
+    assert netflix_tab.scroll_deltas == [120.0]
+
+
+def test_navigate_home_leads_back_to_the_service_homepage(
+    running_server: RunningServer, netflix_tab: FakeBrowserTab
+) -> None:
+    server, _ = running_server
+    post_command(server, {"action": "navigate_home"})
+    assert any(
+        "https://www.netflix.com" in javascript
+        for javascript in netflix_tab.evaluated_javascript
+    )
+
+
+def test_episode_buttons_reach_the_video_tab(
+    running_server: RunningServer, netflix_tab: FakeBrowserTab
+) -> None:
+    server, _ = running_server
+    post_command(server, {"action": "next_episode"})
+    post_command(server, {"action": "restart_episode"})
+    executed = "".join(netflix_tab.evaluated_javascript)
+    assert "control-next" in executed
+    assert "seekToSeconds(Math.max(0, 0.0))" in executed

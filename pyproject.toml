@@ -1,6 +1,6 @@
 [project]
 name = "intro-skipper"
-version = "1.8.0"
+version = "1.9.0"
 description = "Skips intros, recaps and credits while tab-streaming Netflix, Disney+ or Amazon Prime Video to a Chromecast."
 requires-python = ">=3.12"
 dependencies = [
@@ -111,18 +111,31 @@ enforce_iad = false
 # deny = ["api"]
 
 [tool.skylos.whitelist]
-# The remote control entry points describe_state and execute_command are
-# called by the HTTP request handler through the server attribute, a dynamic
-# hop the static analysis cannot see; the remaining names are their private
-# helpers, which inherit the same blind spot.
+# The remote control entry points (describe_state, execute_command,
+# read_live_frame) are called by the HTTP request handler through the server
+# attribute, a dynamic hop the static analysis cannot see; the remaining
+# names are their private helpers, which inherit the same blind spot.
 names = [
     "describe_state",
     "execute_command",
+    "read_live_frame",
     "_read_video_state",
     "_run_video_javascript",
-    "_find_video_tab",
+    "find_video_tab",
+    "find_service_tab",
+    "_list_tabs_or_none",
+    "_matches_any_service",
+    "find_streaming_service_for",
     "_shows_a_streaming_video",
     "_build_video_javascript",
+    "_control_handlers",
+    "_toggle_skipping",
+    "_navigate_home",
+    "_tap_on_service_tab",
+    "_scroll_service_tab",
+    "_stop_live_view",
+    "_ensure_screencast",
+    "_stop_screencast",
 ]
 
 [tool.skylos.whitelist.documented]

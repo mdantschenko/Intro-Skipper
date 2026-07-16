@@ -89,9 +89,16 @@ If a service changes its player, only the CSS selectors in
 While the tool runs, it serves a remote control page for your phone. The
 startup log shows the address, for example `Phone remote: http://192.168.1.23:8321`
 — open it in the phone browser (same WLAN as the PC). The page offers
-play/pause, a seek bar, volume, individual on/off switches for every skip
-kind (intros, recaps, next episode, the "still watching?" prompt) and
-10-second jumps by double-tapping the left or right half of the touch area.
+play/pause, a seek bar, volume with a percentage display, individual on/off
+switches for every skip kind (intros, recaps, next episode, the "still
+watching?" prompt), restart-episode and next-episode buttons and 10-second
+jumps via buttons or by double-tapping the touch area.
+
+The "Browse" button opens a live view of the streaming tab on the phone
+(about 10 to 20 frames per second): tap to click, drag to scroll — enough to
+leave an episode, browse the catalog and start something new without walking
+to the PC. As soon as an episode starts playing, the phone returns to the
+control view automatically.
 
 Windows asks once for a firewall permission on the first start; note that
 anyone on the same network can reach the page while the tool runs. If several

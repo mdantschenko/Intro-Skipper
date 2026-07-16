@@ -154,9 +154,26 @@ class ChromeConstants:
     STARTUP_TIMEOUT_SECONDS = 20.0
     STARTUP_POLL_INTERVAL_SECONDS = 0.5
     NEW_TAB_PAGE_URL = "chrome://newtab/"
+    SCREENSHOT_JPEG_QUALITY = 55
+    SCREENCAST_MAX_WIDTH = 1280
+    SCREENCAST_MAX_HEIGHT = 800
 
 
 class JavaScriptSnippets:
+    READ_VIEWPORT_SIZE = "({width: window.innerWidth, height: window.innerHeight})"
+    NAVIGATE_TEMPLATE = "window.location.href = __TARGET_URL__"
+    CLICK_FIRST_MATCH_TEMPLATE = """
+        (() => {
+            for (const selector of __CSS_SELECTORS__) {
+                const element = document.querySelector(selector);
+                if (element !== null) {
+                    element.click();
+                    return true;
+                }
+            }
+            return false;
+        })()
+    """
     CLICK_FIRST_VISIBLE_ELEMENT_TEMPLATE = """
         (() => {
             for (const element of document.querySelectorAll(__CSS_SELECTOR__)) {
@@ -175,6 +192,16 @@ class NetflixSelectors:
     SKIP_RECAP = '[data-uia="player-skip-recap"]'
     NEXT_EPISODE = '[data-uia^="next-episode-seamless-button"]'
     CONTINUE_WATCHING = '[data-uia="interrupt-autoplay-continue"]'
+
+
+class PlayerControlSelectors:
+    # The in-player next buttons of the three services; unlike the credit
+    # overlays they exist during the whole episode.
+    NEXT_EPISODE_BUTTONS = (
+        '[data-uia="control-next"]',
+        ".atvwebplayersdk-nexttitle-button",
+        'button[aria-label="Next Episode"]',
+    )
 
 
 class DisneyPlusSelectors:
