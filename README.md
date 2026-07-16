@@ -54,7 +54,7 @@ Hintergrund weiterläuft; Strg+C funktioniert weiterhin.
 uv run pytest
 uv run black --check .
 uv run radon cc src main.py -s -a
-uv run skylos src
+uv run skylos .
 uv run complexipy src main.py
 uv run pydeps src/intro_skipper --noshow -o dependency_graph.svg
 ```
