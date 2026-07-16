@@ -19,9 +19,16 @@ class ChromeLauncher:
 
     def ensure_browser_is_running(self) -> None:
         if self._browser_connection.is_reachable():
+            self._ensure_a_window_is_open()
             return
         self._process_starter(self._build_chrome_command())
         self._wait_until_reachable()
+
+    def _ensure_a_window_is_open(self) -> None:
+        # A leftover background Chrome answers on the port but has no
+        # tabs; without a fresh tab no window would ever become visible.
+        if not self._browser_connection.list_open_tabs():
+            self._browser_connection.open_new_tab()
 
     @staticmethod
     def _build_chrome_command() -> list[str]:

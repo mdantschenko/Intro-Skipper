@@ -1,6 +1,10 @@
+import pytest
+
 from intro_skipper.application import IntroSkipperApplication
+from intro_skipper.browser.browser_connection import BrowserTab
 from intro_skipper.helpers.constants import (
     AmazonPrimeSelectors,
+    ApplicationConstants,
     DisneyPlusSelectors,
     NetflixSelectors,
 )
@@ -82,8 +86,30 @@ def test_unrelated_tab_stays_untouched() -> None:
     assert search_tab.clicked_css_selectors == []
 
 
+class WindowClosingBrowserConnection(FakeBrowserConnection):
+    """Answers on the port, but all tabs disappear after the first pass."""
+
+    def list_open_tabs(self) -> list[BrowserTab]:
+        open_tabs = super().list_open_tabs()
+        self.open_tabs = []
+        return open_tabs
+
+
 def test_application_stops_when_chrome_is_closed() -> None:
     browser_connection = FakeBrowserConnection(reachable=False)
+    application = IntroSkipperApplication(
+        browser_connection, build_all_streaming_services()
+    )
+    application.run_forever()
+
+
+def test_application_stops_when_the_last_chrome_window_was_closed(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(ApplicationConstants, "POLLING_INTERVAL_SECONDS", 0.0)
+    browser_connection = WindowClosingBrowserConnection(
+        open_tabs=[FakeBrowserTab(NETFLIX_EPISODE_URL)]
+    )
     application = IntroSkipperApplication(
         browser_connection, build_all_streaming_services()
     )

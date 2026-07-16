@@ -32,7 +32,8 @@ Danach: Serie in diesem Chrome-Fenster starten, im Chrome-Menü „Streamen…" 
 und den Tab an den Chromecast senden. Jede übersprungene Stelle erscheint als
 Log-Zeile in der Konsole und wird zusätzlich in einer Log-Datei unter `logs/`
 dokumentiert (eine Datei pro Lauf). Das Skript beendet sich automatisch, sobald
-du Chrome schließt; Strg+C funktioniert weiterhin.
+du das letzte Chrome-Fenster schließt — auch wenn Chrome danach unsichtbar im
+Hintergrund weiterläuft; Strg+C funktioniert weiterhin.
 
 Ändert ein Dienst seinen Player, müssen nur die CSS-Selektoren in
 `src/intro_skipper/helpers/constants.py` angepasst werden.

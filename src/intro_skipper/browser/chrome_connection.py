@@ -64,7 +64,9 @@ class ChromeTab(BrowserTab):
 
 class ChromeConnection(BrowserConnection):
     def __init__(self, debugging_port: int = ChromeConstants.DEBUGGING_PORT) -> None:
-        self._tab_list_url = f"http://127.0.0.1:{debugging_port}/json"
+        devtools_base_url = f"http://127.0.0.1:{debugging_port}"
+        self._tab_list_url = f"{devtools_base_url}/json"
+        self._new_tab_url = f"{devtools_base_url}/json/new"
 
     def is_reachable(self) -> bool:
         try:
@@ -89,3 +91,12 @@ class ChromeConnection(BrowserConnection):
             for tab_description in response.json()
             if tab_description.get("type") == "page"
         ]
+
+    def open_new_tab(self) -> None:
+        try:
+            requests.put(
+                self._new_tab_url,
+                timeout=ChromeConstants.HTTP_REQUEST_TIMEOUT_SECONDS,
+            )
+        except requests.RequestException as error:
+            raise BrowserCommunicationError(str(error)) from error
