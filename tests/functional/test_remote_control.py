@@ -74,6 +74,9 @@ def test_the_remote_page_is_served(running_server: RunningServer) -> None:
     page = read_response(server, "/").decode("utf-8")
     assert "Intro Skipper" in page
     assert "seek-bar" in page
+    assert "jump-back" in page
+    assert "jump-forward" in page
+    assert "volume-percent" in page
 
 
 def test_the_state_reports_video_and_skipping(running_server: RunningServer) -> None:
