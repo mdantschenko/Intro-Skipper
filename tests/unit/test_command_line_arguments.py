@@ -1,12 +1,14 @@
 import pytest
 
-from intro_skipper.command_line_arguments import parse_requested_streaming_services
+from intro_skipper.command_line_arguments import parse_command_line_options
 
 
 def parse_service_names(argument_list: list[str]) -> list[str]:
     return [
         streaming_service.name
-        for streaming_service in parse_requested_streaming_services(argument_list)
+        for streaming_service in parse_command_line_options(
+            argument_list
+        ).streaming_services
     ]
 
 
@@ -45,4 +47,21 @@ def test_all_opens_every_service() -> None:
 
 def test_an_unknown_name_is_rejected_with_an_error() -> None:
     with pytest.raises(SystemExit):
-        parse_requested_streaming_services(["youtube"])
+        parse_command_line_options(["youtube"])
+
+
+def test_log_files_are_disabled_by_default() -> None:
+    assert parse_command_line_options([]).write_log_file is False
+
+
+def test_the_log_flag_enables_log_files() -> None:
+    assert parse_command_line_options(["--log"]).write_log_file is True
+
+
+def test_the_log_flag_can_be_combined_with_services() -> None:
+    command_line_options = parse_command_line_options(["netflix", "--log"])
+    assert command_line_options.write_log_file is True
+    assert [
+        streaming_service.name
+        for streaming_service in command_line_options.streaming_services
+    ] == ["Netflix"]

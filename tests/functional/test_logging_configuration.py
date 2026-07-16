@@ -5,12 +5,24 @@ from intro_skipper.helpers.constants import ApplicationConstants
 from intro_skipper.logging_configuration import configure_logging
 
 
-def test_log_folder_is_created_and_events_are_documented(tmp_path: Path) -> None:
+def test_log_folder_and_file_are_created_when_log_files_are_enabled(
+    tmp_path: Path,
+) -> None:
     log_directory = tmp_path / "logs"
-    log_file_path = configure_logging(log_directory)
+    log_file_path = configure_logging(True, log_directory)
 
     logging.getLogger(ApplicationConstants.LOGGER_NAME).info("Netflix: skipped intro")
 
-    assert log_directory.is_dir()
+    assert log_file_path is not None
     assert log_file_path.parent == log_directory
     assert "Netflix: skipped intro" in log_file_path.read_text(encoding="utf-8")
+
+
+def test_no_log_folder_or_file_is_created_by_default(tmp_path: Path) -> None:
+    log_directory = tmp_path / "logs"
+    log_file_path = configure_logging(False, log_directory)
+
+    logging.getLogger(ApplicationConstants.LOGGER_NAME).info("Netflix: skipped intro")
+
+    assert log_file_path is None
+    assert not log_directory.exists()

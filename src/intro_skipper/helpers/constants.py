@@ -15,6 +15,15 @@ class ApplicationConstants:
     TERMINAL_INPUT_CHARACTERS_TO_STRIP = chr(0xFEFF) + ' \t\r\n"'
 
 
+class UpdateCheckConstants:
+    DISTRIBUTION_NAME = "intro-skipper"
+    LATEST_COMMIT_URL = (
+        "https://api.github.com/repos/mdantschenko/Intro-Skipper/commits/main"
+    )
+    REQUEST_TIMEOUT_SECONDS = 3.0
+    UPDATE_COMMAND = "uv tool upgrade intro-skipper"
+
+
 class StreamingServiceHomepages:
     NETFLIX = "https://www.netflix.com"
     DISNEY_PLUS = "https://www.disneyplus.com"

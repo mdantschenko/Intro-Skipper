@@ -19,32 +19,54 @@ on the Chromecast immediately.
   chrome.exe at startup)
 - [uv](https://docs.astral.sh/uv/)
 
-## Getting started
+## Installation
 
-Install it as a tool straight from GitHub (no clone needed):
+Run this once in any terminal (PowerShell) — no clone, no setup, uv downloads
+and builds everything by itself:
 
 ```
 uv tool install git+https://github.com/mdantschenko/Intro-Skipper
-intro-skipper
 ```
 
-Or work from a clone:
+If the installer warns that `...\.local\bin` is not on your PATH, run
+`uv tool update-shell` once and open a new terminal afterwards.
+
+## Usage
+
+After the one-time installation the `intro-skipper` command is available in
+every terminal, from any folder — starting it is all you ever do:
+
+```
+intro-skipper                   # watch Chrome tabs and skip
+intro-skipper netflix           # additionally opens Netflix
+intro-skipper netflix disney    # additionally opens Netflix and Disney+
+intro-skipper all               # additionally opens all three services
+intro-skipper netflix --log     # additionally saves a log file of the run
+```
+
+Valid service names: `netflix`, `disney`, `amazon` (or `prime`), `all`.
+
+## Updates
+
+Get the newest version at any time with:
+
+```
+uv tool upgrade intro-skipper
+```
+
+You do not need to check for updates yourself: on every start the tool
+compares its own installed version with the newest one on GitHub and prints a
+notice containing exactly this command when an update is available. Without
+an internet connection the check is skipped silently.
+
+## Development
+
+Work from a clone of the repository:
 
 ```
 uv sync
-uv run python main.py
+uv run python main.py netflix
 ```
-
-Streaming services can optionally be opened right at startup:
-
-```
-uv run python main.py netflix           # opens Netflix
-uv run python main.py netflix disney    # opens Netflix and Disney+
-uv run python main.py all               # opens all three services
-```
-
-Valid names: `netflix`, `disney`, `amazon` (or `prime`), `all`. When installed
-as a tool, the same arguments work directly: `intro-skipper netflix disney`.
 
 On the first start a fresh Chrome window opens with its own profile
 (`%LOCALAPPDATA%\IntroSkipper\ChromeProfile`) — log in to Netflix, Disney+ and
@@ -53,8 +75,9 @@ the default profile, which is why the separate profile is required.
 
 After that: start an episode in this Chrome window, pick "Cast…" from the
 Chrome menu and send the tab to the Chromecast. Every skipped moment shows up
-as a log line in the console and is also documented in a log file under
-`%LOCALAPPDATA%\IntroSkipper\logs` (one file per run). The script stops automatically as soon as you
+as a log line in the console; when started with `--log`, it is additionally
+documented in a log file under `%LOCALAPPDATA%\IntroSkipper\logs` (one file
+per run). The script stops automatically as soon as you
 close the last Chrome window — even if Chrome keeps running invisibly in the
 background; Ctrl+C keeps working too.
 

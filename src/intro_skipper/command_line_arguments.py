@@ -1,4 +1,5 @@
 import argparse
+from dataclasses import dataclass
 from typing import Sequence
 
 from intro_skipper.helpers.constants import ApplicationConstants
@@ -8,15 +9,25 @@ from intro_skipper.services.streaming_service_catalog import (
 )
 
 
-def parse_requested_streaming_services(
-    argument_list: Sequence[str],
-) -> tuple[StreamingService, ...]:
+@dataclass(frozen=True)
+class CommandLineOptions:
+    streaming_services: tuple[StreamingService, ...]
+    write_log_file: bool
+
+
+def parse_command_line_options(argument_list: Sequence[str]) -> CommandLineOptions:
     parser = _build_argument_parser()
     parsed_arguments = parser.parse_args(list(argument_list))
     try:
-        return _resolve_streaming_service_names(parsed_arguments.streaming_services)
+        streaming_services = _resolve_streaming_service_names(
+            parsed_arguments.streaming_services
+        )
     except ValueError as error:
         parser.error(str(error))
+    return CommandLineOptions(
+        streaming_services=streaming_services,
+        write_log_file=parsed_arguments.write_log_file,
+    )
 
 
 def _build_argument_parser() -> argparse.ArgumentParser:
@@ -31,6 +42,12 @@ def _build_argument_parser() -> argparse.ArgumentParser:
         nargs="*",
         metavar="streaming_service",
         help=f"services to open on startup: {_describe_valid_names()}",
+    )
+    parser.add_argument(
+        "--log",
+        action="store_true",
+        dest="write_log_file",
+        help="additionally save a log file of this run",
     )
     return parser
 
