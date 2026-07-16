@@ -82,9 +82,9 @@ def test_unrelated_tab_stays_untouched() -> None:
     assert search_tab.clicked_css_selectors == []
 
 
-def test_unreachable_browser_does_not_crash_the_polling_pass() -> None:
+def test_application_stops_when_chrome_is_closed() -> None:
     browser_connection = FakeBrowserConnection(reachable=False)
     application = IntroSkipperApplication(
         browser_connection, build_all_streaming_services()
     )
-    application.run_single_pass()
+    application.run_forever()
