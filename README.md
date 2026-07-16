@@ -19,6 +19,15 @@ on the Chromecast immediately.
 
 ## Getting started
 
+Install it as a tool straight from GitHub (no clone needed):
+
+```
+uv tool install git+https://github.com/mdantschenko/Intro-Skipper
+intro-skipper
+```
+
+Or work from a clone:
+
 ```
 uv sync
 uv run python main.py
@@ -32,7 +41,8 @@ uv run python main.py netflix disney    # opens Netflix and Disney+
 uv run python main.py all               # opens all three services
 ```
 
-Valid names: `netflix`, `disney`, `amazon` (or `prime`), `all`.
+Valid names: `netflix`, `disney`, `amazon` (or `prime`), `all`. When installed
+as a tool, the same arguments work directly: `intro-skipper netflix disney`.
 
 On the first start a fresh Chrome window opens with its own profile
 (`%LOCALAPPDATA%\IntroSkipper\ChromeProfile`) — log in to Netflix, Disney+ and

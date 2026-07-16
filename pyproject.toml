@@ -19,6 +19,9 @@ dev = [
     "complexipy",
 ]
 
+[project.scripts]
+intro-skipper = "intro_skipper.entry_point:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
