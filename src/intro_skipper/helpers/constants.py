@@ -4,6 +4,10 @@ from pathlib import Path
 class ApplicationConstants:
     LOGGER_NAME = "intro_skipper"
     POLLING_INTERVAL_SECONDS = 1.0
+    LOG_DIRECTORY = Path("logs")
+    LOG_FILE_NAME_TEMPLATE = "intro_skipper_{start_time}.log"
+    LOG_TIMESTAMP_FORMAT = "%Y-%m-%d_%H-%M-%S"
+    LOG_MESSAGE_FORMAT = "%(asctime)s  %(message)s"
 
 
 class ChromeConstants:

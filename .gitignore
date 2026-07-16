@@ -3,5 +3,6 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .skylos/
+logs/
 *.egg-info/
 .complexipy_cache
