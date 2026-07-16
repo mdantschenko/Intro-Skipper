@@ -171,6 +171,17 @@ def test_navigate_home_leads_back_to_the_service_homepage(
     )
 
 
+def test_returning_to_the_controls_requests_fullscreen(
+    running_server: RunningServer, netflix_tab: FakeBrowserTab
+) -> None:
+    server, _ = running_server
+    post_command(server, {"action": "enter_fullscreen"})
+    assert any(
+        "requestFullscreen" in javascript
+        for javascript in netflix_tab.evaluated_javascript
+    )
+
+
 def test_episode_buttons_reach_the_video_tab(
     running_server: RunningServer, netflix_tab: FakeBrowserTab
 ) -> None:

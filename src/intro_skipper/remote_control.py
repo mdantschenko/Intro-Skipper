@@ -92,6 +92,7 @@ class RemoteControlServer:
             "tap": self._tap_on_service_tab,
             "scroll": self._scroll_service_tab,
             "stop_live_view": self._stop_live_view,
+            "enter_fullscreen": self._enter_fullscreen,
         }
 
     def _toggle_skipping(self, command: dict[str, Any]) -> None:
@@ -123,6 +124,11 @@ class RemoteControlServer:
 
     def _stop_live_view(self, _command: dict[str, Any]) -> None:  # skylos: ignore
         self._stop_screencast()
+
+    def _enter_fullscreen(self, _command: dict[str, Any]) -> None:  # skylos: ignore
+        service_tab = self._live_tab_or_search()
+        if service_tab is not None:
+            service_tab.evaluate_javascript(JavaScriptSnippets.ENTER_FULLSCREEN)
 
     def read_live_frame(self) -> bytes | None:
         service_tab = self._live_tab_or_search()

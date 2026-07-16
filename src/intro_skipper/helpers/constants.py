@@ -202,6 +202,15 @@ class ChromeConstants:
 class JavaScriptSnippets:
     READ_VIEWPORT_SIZE = "({width: window.innerWidth, height: window.innerHeight})"
     NAVIGATE_TEMPLATE = "window.location.href = __TARGET_URL__"
+    ENTER_FULLSCREEN = """
+        (() => {
+            if (document.fullscreenElement !== null) {
+                return true;
+            }
+            document.documentElement.requestFullscreen().catch(() => {});
+            return true;
+        })()
+    """
     CLICK_FIRST_VISIBLE_ELEMENT_TEMPLATE = """
         (() => {
             for (const element of document.querySelectorAll(__CSS_SELECTOR__)) {

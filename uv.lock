@@ -492,7 +492,7 @@ wheels = [
 
 [[package]]
 name = "intro-skipper"
-version = "1.9.3"
+version = "1.10.0"
 source = { editable = "." }
 dependencies = [
     { name = "requests" },

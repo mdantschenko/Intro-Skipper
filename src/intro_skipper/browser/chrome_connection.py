@@ -118,8 +118,11 @@ class ChromeTab(BrowserTab):
         return self.evaluate_javascript(javascript) is True
 
     def evaluate_javascript(self, javascript: str) -> object:
+        # userGesture lets the page use APIs that need a user action,
+        # such as requestFullscreen.
         result = self._send_devtools_command(
-            "Runtime.evaluate", {"expression": javascript, "returnByValue": True}
+            "Runtime.evaluate",
+            {"expression": javascript, "returnByValue": True, "userGesture": True},
         )
         return result.get("result", {}).get("value")
 

@@ -340,6 +340,7 @@
   function leaveLiveView() {
     liveViewActive = false;
     liveView.classList.remove("active");
+    sendCommand({ action: "enter_fullscreen" });
     sendCommand({ action: "stop_live_view" });
   }
 
