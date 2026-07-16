@@ -4,6 +4,9 @@ import sys
 from intro_skipper.application import IntroSkipperApplication
 from intro_skipper.browser.chrome_connection import ChromeConnection
 from intro_skipper.browser.chrome_launcher import ChromeLauncher
+from intro_skipper.chrome_executable_prompt import (
+    resolve_chrome_executable_interactively,
+)
 from intro_skipper.command_line_arguments import parse_requested_streaming_services
 from intro_skipper.helpers.constants import ApplicationConstants
 from intro_skipper.logging_configuration import configure_logging
@@ -22,7 +25,11 @@ def main() -> None:
         streaming_service.homepage_url
         for streaming_service in requested_streaming_services
     )
-    ChromeLauncher(chrome_connection).ensure_browser_is_running(start_page_urls)
+    chrome_launcher = ChromeLauncher(
+        chrome_connection,
+        chrome_executable_provider=resolve_chrome_executable_interactively,
+    )
+    chrome_launcher.ensure_browser_is_running(start_page_urls)
     for streaming_service in requested_streaming_services:
         logger.info("Opened %s.", streaming_service.name)
 

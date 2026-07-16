@@ -26,9 +26,11 @@ class ChromeLauncher:
         self,
         browser_connection: BrowserConnection,
         process_starter: ProcessStarter = subprocess.Popen,
+        chrome_executable_provider: Callable[[], Path] = find_chrome_executable,
     ) -> None:
         self._browser_connection = browser_connection
         self._process_starter = process_starter
+        self._chrome_executable_provider = chrome_executable_provider
 
     def ensure_browser_is_running(self, start_page_urls: Sequence[str] = ()) -> None:
         if self._browser_connection.is_reachable():
@@ -47,10 +49,9 @@ class ChromeLauncher:
             # tabs; without a fresh tab no window would ever become visible.
             self._browser_connection.open_new_tab(ChromeConstants.NEW_TAB_PAGE_URL)
 
-    @staticmethod
-    def _build_chrome_command(start_page_urls: Sequence[str]) -> list[str]:
+    def _build_chrome_command(self, start_page_urls: Sequence[str]) -> list[str]:
         return [
-            str(find_chrome_executable()),
+            str(self._chrome_executable_provider()),
             f"--remote-debugging-port={ChromeConstants.DEBUGGING_PORT}",
             f"--user-data-dir={ChromeConstants.USER_PROFILE_DIRECTORY}",
             "--no-first-run",

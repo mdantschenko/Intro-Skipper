@@ -10,6 +10,9 @@ class ApplicationConstants:
     LOG_TIMESTAMP_FORMAT = "%Y-%m-%d_%H-%M-%S"
     LOG_MESSAGE_FORMAT = "%(asctime)s  %(message)s"
     COMMAND_LINE_NAME_FOR_ALL_SERVICES = "all"
+    # Whitespace, surrounding quotes from "copy as path" and the invisible
+    # byte order mark (U+FEFF) that piped PowerShell input carries.
+    TERMINAL_INPUT_CHARACTERS_TO_STRIP = chr(0xFEFF) + ' \t\r\n"'
 
 
 class StreamingServiceHomepages:

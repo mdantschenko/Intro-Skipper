@@ -15,7 +15,8 @@ on the Chromecast immediately.
 ## Requirements
 
 - Windows with Google Chrome (found automatically in the standard install
-  locations)
+  locations; if Chrome lives somewhere else, the tool asks for the path to
+  chrome.exe at startup)
 - [uv](https://docs.astral.sh/uv/)
 
 ## Getting started
