@@ -28,6 +28,7 @@ class ChromeConstants:
     JAVASCRIPT_EVALUATION_REQUEST_ID = 1
     STARTUP_TIMEOUT_SECONDS = 20.0
     STARTUP_POLL_INTERVAL_SECONDS = 0.5
+    NEW_TAB_PAGE_URL = "chrome://newtab/"
 
 
 class JavaScriptSnippets:

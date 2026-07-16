@@ -18,9 +18,12 @@ def main() -> None:
     logger = logging.getLogger(ApplicationConstants.LOGGER_NAME)
 
     chrome_connection = ChromeConnection()
-    ChromeLauncher(chrome_connection).ensure_browser_is_running()
+    start_page_urls = tuple(
+        streaming_service.homepage_url
+        for streaming_service in requested_streaming_services
+    )
+    ChromeLauncher(chrome_connection).ensure_browser_is_running(start_page_urls)
     for streaming_service in requested_streaming_services:
-        chrome_connection.open_new_tab(streaming_service.homepage_url)
         logger.info("Opened %s.", streaming_service.name)
 
     application = IntroSkipperApplication(

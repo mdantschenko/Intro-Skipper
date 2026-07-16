@@ -22,11 +22,13 @@ def test_chrome_is_not_started_when_debugging_port_already_answers() -> None:
     assert process_recorder.started_commands == []
 
 
-def test_a_window_is_opened_when_chrome_runs_invisibly_without_tabs() -> None:
+def test_the_regular_new_tab_page_is_opened_when_chrome_runs_invisibly() -> None:
     browser_connection = FakeBrowserConnection(open_tabs=[], reachable=True)
     process_recorder = ChromeProcessRecorder(browser_connection)
     ChromeLauncher(browser_connection, process_recorder).ensure_browser_is_running()
-    assert len(browser_connection.open_tabs) == 1
+    assert [browser_tab.url for browser_tab in browser_connection.open_tabs] == [
+        ChromeConstants.NEW_TAB_PAGE_URL
+    ]
 
 
 def test_no_extra_tab_is_opened_when_a_window_already_exists() -> None:
@@ -36,6 +38,28 @@ def test_no_extra_tab_is_opened_when_a_window_already_exists() -> None:
     process_recorder = ChromeProcessRecorder(browser_connection)
     ChromeLauncher(browser_connection, process_recorder).ensure_browser_is_running()
     assert len(browser_connection.open_tabs) == 1
+
+
+def test_only_the_requested_start_pages_are_opened_in_a_running_browser() -> None:
+    browser_connection = FakeBrowserConnection(open_tabs=[], reachable=True)
+    process_recorder = ChromeProcessRecorder(browser_connection)
+    ChromeLauncher(browser_connection, process_recorder).ensure_browser_is_running(
+        ("https://www.netflix.com", "https://www.disneyplus.com")
+    )
+    assert [browser_tab.url for browser_tab in browser_connection.open_tabs] == [
+        "https://www.netflix.com",
+        "https://www.disneyplus.com",
+    ]
+
+
+def test_requested_start_pages_are_part_of_the_chrome_start_command() -> None:
+    browser_connection = FakeBrowserConnection(reachable=False)
+    process_recorder = ChromeProcessRecorder(browser_connection)
+    ChromeLauncher(browser_connection, process_recorder).ensure_browser_is_running(
+        ("https://www.netflix.com",)
+    )
+    (chrome_command,) = process_recorder.started_commands
+    assert chrome_command[-1] == "https://www.netflix.com"
 
 
 def test_chrome_is_started_with_debugging_port_and_separate_profile() -> None:

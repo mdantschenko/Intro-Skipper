@@ -17,21 +17,25 @@ class ChromeLauncher:
         self._browser_connection = browser_connection
         self._process_starter = process_starter
 
-    def ensure_browser_is_running(self) -> None:
+    def ensure_browser_is_running(self, start_page_urls: Sequence[str] = ()) -> None:
         if self._browser_connection.is_reachable():
-            self._ensure_a_window_is_open()
+            self._open_start_pages_in_running_browser(start_page_urls)
             return
-        self._process_starter(self._build_chrome_command())
+        self._process_starter(self._build_chrome_command(start_page_urls))
         self._wait_until_reachable()
 
-    def _ensure_a_window_is_open(self) -> None:
-        # A leftover background Chrome answers on the port but has no
-        # tabs; without a fresh tab no window would ever become visible.
-        if not self._browser_connection.list_open_tabs():
-            self._browser_connection.open_new_tab()
+    def _open_start_pages_in_running_browser(
+        self, start_page_urls: Sequence[str]
+    ) -> None:
+        for start_page_url in start_page_urls:
+            self._browser_connection.open_new_tab(start_page_url)
+        if not start_page_urls and not self._browser_connection.list_open_tabs():
+            # A leftover background Chrome answers on the port but has no
+            # tabs; without a fresh tab no window would ever become visible.
+            self._browser_connection.open_new_tab(ChromeConstants.NEW_TAB_PAGE_URL)
 
     @staticmethod
-    def _build_chrome_command() -> list[str]:
+    def _build_chrome_command(start_page_urls: Sequence[str]) -> list[str]:
         return [
             str(ChromeConstants.EXECUTABLE_PATH),
             f"--remote-debugging-port={ChromeConstants.DEBUGGING_PORT}",
@@ -42,6 +46,7 @@ class ChromeLauncher:
             # the last window closes, blocks the debugging port and the next
             # launch silently opens no window.
             "--disable-background-mode",
+            *start_page_urls,
         ]
 
     def _wait_until_reachable(self) -> None:
