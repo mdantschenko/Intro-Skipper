@@ -14,7 +14,8 @@ on the Chromecast immediately.
 
 ## Requirements
 
-- Windows with Google Chrome
+- Windows with Google Chrome (found automatically in the standard install
+  locations)
 - [uv](https://docs.astral.sh/uv/)
 
 ## Getting started
@@ -52,7 +53,7 @@ the default profile, which is why the separate profile is required.
 After that: start an episode in this Chrome window, pick "Cast…" from the
 Chrome menu and send the tab to the Chromecast. Every skipped moment shows up
 as a log line in the console and is also documented in a log file under
-`logs/` (one file per run). The script stops automatically as soon as you
+`%LOCALAPPDATA%\IntroSkipper\logs` (one file per run). The script stops automatically as soon as you
 close the last Chrome window — even if Chrome keeps running invisibly in the
 background; Ctrl+C keeps working too.
 

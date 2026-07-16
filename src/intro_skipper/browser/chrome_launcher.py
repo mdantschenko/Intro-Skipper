@@ -1,11 +1,24 @@
 import subprocess
 import time
+from pathlib import Path
 from typing import Callable, Sequence
 
 from intro_skipper.browser.browser_connection import BrowserConnection
 from intro_skipper.helpers.constants import ChromeConstants
 
 ProcessStarter = Callable[[Sequence[str]], object]
+
+
+def find_chrome_executable(
+    search_paths: Sequence[Path] = ChromeConstants.EXECUTABLE_SEARCH_PATHS,
+) -> Path:
+    for candidate_path in search_paths:
+        if candidate_path.is_file():
+            return candidate_path
+    raise FileNotFoundError(
+        "Google Chrome was not found in any known install location: "
+        + ", ".join(str(candidate_path) for candidate_path in search_paths)
+    )
 
 
 class ChromeLauncher:
@@ -37,7 +50,7 @@ class ChromeLauncher:
     @staticmethod
     def _build_chrome_command(start_page_urls: Sequence[str]) -> list[str]:
         return [
-            str(ChromeConstants.EXECUTABLE_PATH),
+            str(find_chrome_executable()),
             f"--remote-debugging-port={ChromeConstants.DEBUGGING_PORT}",
             f"--user-data-dir={ChromeConstants.USER_PROFILE_DIRECTORY}",
             "--no-first-run",

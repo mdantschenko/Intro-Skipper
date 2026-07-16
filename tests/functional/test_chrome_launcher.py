@@ -1,6 +1,9 @@
+from pathlib import Path
 from typing import Sequence
 
-from intro_skipper.browser.chrome_launcher import ChromeLauncher
+import pytest
+
+from intro_skipper.browser.chrome_launcher import ChromeLauncher, find_chrome_executable
 from intro_skipper.helpers.constants import ChromeConstants
 from tests.functional.browser_fakes import FakeBrowserConnection, FakeBrowserTab
 
@@ -67,6 +70,22 @@ def test_chrome_is_started_with_debugging_port_and_separate_profile() -> None:
     process_recorder = ChromeProcessRecorder(browser_connection)
     ChromeLauncher(browser_connection, process_recorder).ensure_browser_is_running()
     (chrome_command,) = process_recorder.started_commands
-    assert chrome_command[0] == str(ChromeConstants.EXECUTABLE_PATH)
+    assert chrome_command[0].endswith("chrome.exe")
     assert f"--remote-debugging-port={ChromeConstants.DEBUGGING_PORT}" in chrome_command
     assert any(argument.startswith("--user-data-dir=") for argument in chrome_command)
+
+
+def test_chrome_is_found_in_the_first_existing_install_location(
+    tmp_path: Path,
+) -> None:
+    chrome_executable = tmp_path / "chrome.exe"
+    chrome_executable.touch()
+    missing_location = tmp_path / "missing" / "chrome.exe"
+    assert find_chrome_executable((missing_location, chrome_executable)) == (
+        chrome_executable
+    )
+
+
+def test_a_missing_chrome_installation_is_reported(tmp_path: Path) -> None:
+    with pytest.raises(FileNotFoundError):
+        find_chrome_executable((tmp_path / "missing" / "chrome.exe",))

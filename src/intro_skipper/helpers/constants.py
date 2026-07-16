@@ -4,7 +4,8 @@ from pathlib import Path
 class ApplicationConstants:
     LOGGER_NAME = "intro_skipper"
     POLLING_INTERVAL_SECONDS = 1.0
-    LOG_DIRECTORY = Path("logs")
+    DATA_DIRECTORY = Path.home() / "AppData" / "Local" / "IntroSkipper"
+    LOG_DIRECTORY = DATA_DIRECTORY / "logs"
     LOG_FILE_NAME_TEMPLATE = "intro_skipper_{start_time}.log"
     LOG_TIMESTAMP_FORMAT = "%Y-%m-%d_%H-%M-%S"
     LOG_MESSAGE_FORMAT = "%(asctime)s  %(message)s"
@@ -26,11 +27,19 @@ class SkipTargetDescriptions:
 
 
 class ChromeConstants:
-    EXECUTABLE_PATH = Path("C:/Program Files/Google/Chrome/Application/chrome.exe")
-    DEBUGGING_PORT = 9222
-    USER_PROFILE_DIRECTORY = (
-        Path.home() / "AppData" / "Local" / "IntroSkipper" / "ChromeProfile"
+    EXECUTABLE_SEARCH_PATHS = (
+        Path("C:/Program Files/Google/Chrome/Application/chrome.exe"),
+        Path("C:/Program Files (x86)/Google/Chrome/Application/chrome.exe"),
+        Path.home()
+        / "AppData"
+        / "Local"
+        / "Google"
+        / "Chrome"
+        / "Application"
+        / "chrome.exe",
     )
+    DEBUGGING_PORT = 9222
+    USER_PROFILE_DIRECTORY = ApplicationConstants.DATA_DIRECTORY / "ChromeProfile"
     HTTP_REQUEST_TIMEOUT_SECONDS = 2.0
     WEBSOCKET_TIMEOUT_SECONDS = 5.0
     JAVASCRIPT_EVALUATION_REQUEST_ID = 1
