@@ -1,5 +1,6 @@
 import json
 import socket
+import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from importlib import resources
@@ -23,6 +24,16 @@ from intro_skipper.skipping_settings import SkippingSettings
 from intro_skipper.streaming_tab_finder import StreamingTabFinder
 
 
+class QuietHTTPServer(ThreadingHTTPServer):
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        """Phones drop their keep-alive connections abruptly whenever the
+        browser leaves the page; that is routine, not a console traceback."""
+        exception = sys.exc_info()[1]
+        if isinstance(exception, (ConnectionResetError, BrokenPipeError)):
+            return
+        super().handle_error(request, client_address)
+
+
 class RemoteControlServer:
     def __init__(
         self,
@@ -33,9 +44,7 @@ class RemoteControlServer:
     ) -> None:
         self._tab_finder = StreamingTabFinder(browser_connection, streaming_services)
         self._skipping_settings = skipping_settings
-        self._http_server = ThreadingHTTPServer(
-            ("", port), _RemoteControlRequestHandler
-        )
+        self._http_server = QuietHTTPServer(("", port), _RemoteControlRequestHandler)
         self._http_server.remote_control = self  # type: ignore[attr-defined]
         self._screencast: ScreencastHandle | None = None
         self._live_tab: BrowserTab | None = None
