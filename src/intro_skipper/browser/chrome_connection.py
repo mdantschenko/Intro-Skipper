@@ -31,11 +31,14 @@ class ChromeTab(BrowserTab):
         javascript = JavaScriptSnippets.CLICK_FIRST_VISIBLE_ELEMENT_TEMPLATE.replace(
             "__CSS_SELECTOR__", json.dumps(css_selector)
         )
+        return self.evaluate_javascript(javascript) is True
+
+    def evaluate_javascript(self, javascript: str) -> object:
         try:
             evaluation_result = self._evaluate_javascript(javascript)
         except (WebSocketException, OSError) as error:
             raise BrowserCommunicationError(str(error)) from error
-        return evaluation_result.get("result", {}).get("value") is True
+        return evaluation_result.get("result", {}).get("value")
 
     def _evaluate_javascript(self, javascript: str) -> dict[str, Any]:
         # Chrome rejects websocket clients that send an Origin header (403),

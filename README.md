@@ -84,6 +84,16 @@ background; Ctrl+C keeps working too.
 If a service changes its player, only the CSS selectors in
 `src/intro_skipper/helpers/constants.py` need updating.
 
+## Phone remote
+
+While the tool runs, it serves a remote control page for your phone. The
+startup log shows the address, for example `Phone remote: http://192.168.1.23:8321`
+— open it in the phone browser (same WLAN as the PC). The page offers
+play/pause, a seek bar, volume, an on/off switch for the automatic skipping
+and 10-second jumps by double-tapping the left or right half of the touch
+area. Windows asks once for a firewall permission on the first start; note
+that anyone on the same network can reach the page while the tool runs.
+
 ## Quality tools
 
 ```

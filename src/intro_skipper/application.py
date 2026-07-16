@@ -8,6 +8,7 @@ from intro_skipper.browser.browser_connection import (
 )
 from intro_skipper.helpers.constants import ApplicationConstants
 from intro_skipper.services.streaming_service import StreamingService
+from intro_skipper.skipping_switch import SkippingSwitch
 
 
 class IntroSkipperApplication:
@@ -15,9 +16,11 @@ class IntroSkipperApplication:
         self,
         browser_connection: BrowserConnection,
         streaming_services: tuple[StreamingService, ...],
+        skipping_switch: SkippingSwitch | None = None,
     ) -> None:
         self._browser_connection = browser_connection
         self._streaming_services = streaming_services
+        self._skipping_switch = skipping_switch or SkippingSwitch()
         self._logger = logging.getLogger(ApplicationConstants.LOGGER_NAME)
         self._browser_had_open_tabs = False
 
@@ -27,8 +30,9 @@ class IntroSkipperApplication:
 
     def run_single_pass(self) -> int:
         open_tabs = self._browser_connection.list_open_tabs()
-        for browser_tab in open_tabs:
-            self._skip_inside_tab(browser_tab)
+        if self._skipping_switch.enabled:
+            for browser_tab in open_tabs:
+                self._skip_inside_tab(browser_tab)
         return len(open_tabs)
 
     def _execute_polling_pass(self) -> bool:

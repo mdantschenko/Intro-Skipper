@@ -15,6 +15,76 @@ class ApplicationConstants:
     TERMINAL_INPUT_CHARACTERS_TO_STRIP = chr(0xFEFF) + ' \t\r\n"'
 
 
+class RemoteControlConstants:
+    PORT = 8321
+    VOLUME_STEP = 0.1
+    PAGE_FILE_NAME = "remote_page.html"
+    TEXT_ENCODING = "utf-8"
+    CONTENT_LENGTH_HEADER = "Content-Length"
+
+
+class VideoControlJavaScript:
+    READ_STATE = """
+        (() => {
+            const video = document.querySelector("video");
+            if (video === null || !Number.isFinite(video.duration)) {
+                return null;
+            }
+            return {
+                paused: video.paused,
+                position_seconds: video.currentTime,
+                duration_seconds: video.duration,
+                volume: video.volume,
+            };
+        })()
+    """
+    TOGGLE_PLAYBACK = """
+        (() => {
+            const video = document.querySelector("video");
+            if (video === null) {
+                return false;
+            }
+            if (video.paused) {
+                video.play();
+            } else {
+                video.pause();
+            }
+            return true;
+        })()
+    """
+    CHANGE_VOLUME_TEMPLATE = """
+        (() => {
+            const video = document.querySelector("video");
+            if (video === null) {
+                return false;
+            }
+            video.volume = Math.min(1, Math.max(0, video.volume + __VOLUME_STEP__));
+            video.muted = false;
+            return true;
+        })()
+    """
+    JUMP_TEMPLATE = """
+        (() => {
+            const video = document.querySelector("video");
+            if (video === null) {
+                return false;
+            }
+            video.currentTime = Math.max(0, video.currentTime + __SECONDS__);
+            return true;
+        })()
+    """
+    SEEK_TEMPLATE = """
+        (() => {
+            const video = document.querySelector("video");
+            if (video === null) {
+                return false;
+            }
+            video.currentTime = __POSITION_SECONDS__;
+            return true;
+        })()
+    """
+
+
 class UpdateCheckConstants:
     DISTRIBUTION_NAME = "intro-skipper"
     LATEST_COMMIT_URL = (

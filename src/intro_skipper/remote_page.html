@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+<title>Intro Skipper Remote</title>
+<style>
+  :root {
+    --background: #16181d;
+    --surface: #1f232b;
+    --line: #2e333d;
+    --text: #e8e6e3;
+    --muted: #8a8f98;
+    --accent: #e6a23c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    background: var(--background);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    max-width: 480px;
+    margin: 0 auto;
+    padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+    gap: 18px;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+  header { display: flex; justify-content: space-between; align-items: center; }
+  header h1 { font-size: 15px; font-weight: 600; letter-spacing: 0.4px; }
+  header .status { font-size: 12px; color: var(--muted); }
+
+  .skip-row {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 14px 16px;
+  }
+  .skip-row span { font-size: 14px; }
+  .switch { position: relative; width: 46px; height: 26px; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0; border-radius: 13px;
+    background: var(--line); transition: background 0.15s;
+  }
+  .slider::before {
+    content: ""; position: absolute; height: 20px; width: 20px;
+    left: 3px; top: 3px; border-radius: 50%;
+    background: var(--muted); transition: transform 0.15s, background 0.15s;
+  }
+  .switch input:checked + .slider { background: rgba(230, 162, 60, 0.35); }
+  .switch input:checked + .slider::before { transform: translateX(20px); background: var(--accent); }
+
+  .touchpad {
+    position: relative;
+    flex: 1; min-height: 220px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden;
+  }
+  .touchpad .hint {
+    position: absolute; bottom: 10px; width: 100%;
+    text-align: center; font-size: 11px; color: var(--muted);
+  }
+  .jump-flash {
+    position: absolute; top: 0; bottom: 0; width: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px; font-weight: 600; color: var(--accent);
+    opacity: 0; pointer-events: none; transition: opacity 0.4s;
+  }
+  #flash-left { left: 0; }
+  #flash-right { right: 0; }
+  .jump-flash.visible { opacity: 1; transition: none; }
+
+  #play-button {
+    width: 92px; height: 92px; border-radius: 50%;
+    border: 1px solid var(--line);
+    background: var(--background); color: var(--text);
+    font-size: 34px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  #play-button:active { border-color: var(--accent); color: var(--accent); }
+
+  .seek-row { display: flex; flex-direction: column; gap: 6px; }
+  .times { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  input[type="range"] {
+    width: 100%; appearance: none; -webkit-appearance: none;
+    height: 4px; border-radius: 2px; background: var(--line); outline: none;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    appearance: none; -webkit-appearance: none;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: var(--accent); border: none;
+  }
+
+  .volume-row { display: flex; gap: 12px; }
+  .volume-row button {
+    flex: 1; padding: 14px 0; font-size: 18px;
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--line); border-radius: 12px; cursor: pointer;
+  }
+  .volume-row button:active { border-color: var(--accent); color: var(--accent); }
+
+  #no-video {
+    text-align: center; color: var(--muted); font-size: 13px;
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Intro Skipper</h1>
+    <span class="status" id="connection-status">connecting…</span>
+  </header>
+
+  <div class="skip-row">
+    <span>Skip intros &amp; recaps automatically</span>
+    <label class="switch">
+      <input type="checkbox" id="skip-toggle" checked>
+      <span class="slider"></span>
+    </label>
+  </div>
+
+  <div class="touchpad" id="touchpad">
+    <div class="jump-flash" id="flash-left">&#8722;10s</div>
+    <div class="jump-flash" id="flash-right">+10s</div>
+    <button id="play-button" aria-label="Play or pause">&#9654;</button>
+    <div class="hint">double-tap left / right to jump 10s</div>
+  </div>
+
+  <p id="no-video">No running video found &ndash; start an episode in Chrome.</p>
+
+  <div class="seek-row">
+    <input type="range" id="seek-bar" min="0" max="100" step="0.1" value="0">
+    <div class="times"><span id="time-position">0:00</span><span id="time-duration">0:00</span></div>
+  </div>
+
+  <div class="volume-row">
+    <button id="volume-down" aria-label="Volume down">&#128265;&nbsp;&#8722;</button>
+    <button id="volume-up" aria-label="Volume up">&#128266;&nbsp;+</button>
+  </div>
+
+<script>
+  "use strict";
+
+  const playButton = document.getElementById("play-button");
+  const seekBar = document.getElementById("seek-bar");
+  const timePosition = document.getElementById("time-position");
+  const timeDuration = document.getElementById("time-duration");
+  const skipToggle = document.getElementById("skip-toggle");
+  const connectionStatus = document.getElementById("connection-status");
+  const noVideoNote = document.getElementById("no-video");
+  const touchpad = document.getElementById("touchpad");
+
+  let scrubbing = false;
+  let lastTapTime = 0;
+  let lastTapSide = null;
+
+  function sendCommand(command) {
+    return fetch("/command", { method: "POST", body: JSON.stringify(command) })
+      .then(refreshState)
+      .catch(() => {});
+  }
+
+  function formatTime(totalSeconds) {
+    if (!Number.isFinite(totalSeconds)) return "0:00";
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = Math.floor(totalSeconds % 60).toString().padStart(2, "0");
+    return hours > 0
+      ? hours + ":" + minutes.toString().padStart(2, "0") + ":" + seconds
+      : minutes + ":" + seconds;
+  }
+
+  function applyState(state) {
+    connectionStatus.textContent = "connected";
+    skipToggle.checked = state.skipping_enabled;
+    const video = state.video;
+    noVideoNote.style.display = video ? "none" : "block";
+    if (!video) return;
+    playButton.innerHTML = video.paused ? "&#9654;" : "&#10074;&#10074;";
+    if (!scrubbing) {
+      seekBar.max = video.duration_seconds;
+      seekBar.value = video.position_seconds;
+      timePosition.textContent = formatTime(video.position_seconds);
+      timeDuration.textContent = formatTime(video.duration_seconds);
+    }
+  }
+
+  function refreshState() {
+    return fetch("/state")
+      .then((response) => response.json())
+      .then(applyState)
+      .catch(() => { connectionStatus.textContent = "not connected"; });
+  }
+
+  playButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    sendCommand({ action: "toggle_playback" });
+  });
+
+  document.getElementById("volume-down").addEventListener("click", () =>
+    sendCommand({ action: "volume_down" }));
+  document.getElementById("volume-up").addEventListener("click", () =>
+    sendCommand({ action: "volume_up" }));
+
+  skipToggle.addEventListener("change", () =>
+    sendCommand({ action: "toggle_skipping" }));
+
+  seekBar.addEventListener("input", () => {
+    scrubbing = true;
+    timePosition.textContent = formatTime(Number(seekBar.value));
+  });
+  seekBar.addEventListener("change", () => {
+    scrubbing = false;
+    sendCommand({ action: "seek", position_seconds: Number(seekBar.value) });
+  });
+
+  function flashJump(side) {
+    const flash = document.getElementById(side === "left" ? "flash-left" : "flash-right");
+    flash.classList.add("visible");
+    setTimeout(() => flash.classList.remove("visible"), 120);
+  }
+
+  touchpad.addEventListener("pointerup", (event) => {
+    if (event.target === playButton) return;
+    const side = event.clientX < touchpad.getBoundingClientRect().left +
+      touchpad.offsetWidth / 2 ? "left" : "right";
+    const now = Date.now();
+    if (side === lastTapSide && now - lastTapTime < 350) {
+      flashJump(side);
+      sendCommand({ action: "jump", seconds: side === "left" ? -10 : 10 });
+      lastTapTime = 0;
+      return;
+    }
+    lastTapSide = side;
+    lastTapTime = now;
+  });
+
+  refreshState();
+  setInterval(() => { if (!scrubbing) refreshState(); }, 1000);
+</script>
+</body>
+</html>

@@ -10,6 +10,8 @@ class FakeBrowserTab(BrowserTab):
         self._url = url
         self.visible_css_selectors = visible_css_selectors or set()
         self.clicked_css_selectors: list[str] = []
+        self.javascript_result: object = None
+        self.evaluated_javascript: list[str] = []
 
     @property
     def url(self) -> str:
@@ -20,6 +22,10 @@ class FakeBrowserTab(BrowserTab):
             return False
         self.clicked_css_selectors.append(css_selector)
         return True
+
+    def evaluate_javascript(self, javascript: str) -> object:
+        self.evaluated_javascript.append(javascript)
+        return self.javascript_result
 
 
 class FakeBrowserConnection(BrowserConnection):

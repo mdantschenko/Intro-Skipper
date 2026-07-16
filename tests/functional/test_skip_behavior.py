@@ -11,6 +11,7 @@ from intro_skipper.helpers.constants import (
 from intro_skipper.services.streaming_service_catalog import (
     build_all_streaming_services,
 )
+from intro_skipper.skipping_switch import SkippingSwitch
 from tests.functional.browser_fakes import FakeBrowserConnection, FakeBrowserTab
 
 NETFLIX_EPISODE_URL = "https://www.netflix.com/watch/81091393"
@@ -93,6 +94,18 @@ class WindowClosingBrowserConnection(FakeBrowserConnection):
         open_tabs = super().list_open_tabs()
         self.open_tabs = []
         return open_tabs
+
+
+def test_nothing_is_clicked_while_skipping_is_switched_off() -> None:
+    netflix_tab = FakeBrowserTab(NETFLIX_EPISODE_URL, {NetflixSelectors.SKIP_INTRO})
+    browser_connection = FakeBrowserConnection(open_tabs=[netflix_tab])
+    skipping_switch = SkippingSwitch()
+    skipping_switch.toggle()
+    application = IntroSkipperApplication(
+        browser_connection, build_all_streaming_services(), skipping_switch
+    )
+    application.run_single_pass()
+    assert netflix_tab.clicked_css_selectors == []
 
 
 def test_application_stops_when_chrome_is_closed() -> None:

@@ -13,9 +13,11 @@ from intro_skipper.command_line_arguments import parse_command_line_options
 from intro_skipper.helpers.constants import ApplicationConstants
 from intro_skipper.logging_configuration import configure_logging
 from intro_skipper.services.streaming_service import StreamingService
+from intro_skipper.remote_control import RemoteControlServer
 from intro_skipper.services.streaming_service_catalog import (
     build_all_streaming_services,
 )
+from intro_skipper.skipping_switch import SkippingSwitch
 from intro_skipper.update_notification import build_update_notification
 
 
@@ -32,13 +34,24 @@ def main() -> None:
         chrome_connection, command_line_options.streaming_services, logger
     )
 
+    skipping_switch = SkippingSwitch()
+    remote_control_server = RemoteControlServer(
+        chrome_connection, build_all_streaming_services(), skipping_switch
+    )
+    remote_control_server.start_in_background()
+    logger.info(
+        "Phone remote: open %s in your phone browser (same WLAN).",
+        remote_control_server.build_page_address(),
+    )
+
     application = IntroSkipperApplication(
-        chrome_connection, build_all_streaming_services()
+        chrome_connection, build_all_streaming_services(), skipping_switch
     )
     try:
         application.run_forever()
     except KeyboardInterrupt:
         pass
+    remote_control_server.shut_down()
     logger.info("Intro Skipper stopped.")
 
 

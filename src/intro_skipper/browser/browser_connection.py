@@ -5,7 +5,7 @@ class BrowserCommunicationError(Exception):
     """Signals that the browser could not be reached or did not answer."""
 
 
-class BrowserTab(ABC):
+class BrowserTab(ABC):  # skylos: ignore[SKY-Q702] interfaces share no state
     @property
     @abstractmethod
     def url(self) -> str:
@@ -14,6 +14,10 @@ class BrowserTab(ABC):
     @abstractmethod
     def click_first_visible_element(self, css_selector: str) -> bool:
         """Click the first visible matching element and report whether one was clicked."""
+
+    @abstractmethod
+    def evaluate_javascript(self, javascript: str) -> object:
+        """Run the expression in the tab and return its JSON value."""
 
 
 class BrowserConnection(ABC):  # skylos: ignore[SKY-Q702] interfaces share no state

@@ -1,0 +1,110 @@
+import json
+import urllib.error
+import urllib.request
+from typing import Any, Iterator
+
+import pytest
+
+from intro_skipper.remote_control import RemoteControlServer
+from intro_skipper.services.streaming_service_catalog import (
+    build_all_streaming_services,
+)
+from intro_skipper.skipping_switch import SkippingSwitch
+from tests.functional.browser_fakes import FakeBrowserConnection, FakeBrowserTab
+
+NETFLIX_EPISODE_URL = "https://www.netflix.com/watch/81091393"
+PLAYING_VIDEO_STATE = {
+    "paused": False,
+    "position_seconds": 125.0,
+    "duration_seconds": 2700.0,
+    "volume": 0.8,
+}
+
+
+@pytest.fixture
+def netflix_tab() -> FakeBrowserTab:
+    browser_tab = FakeBrowserTab(NETFLIX_EPISODE_URL)
+    browser_tab.javascript_result = PLAYING_VIDEO_STATE
+    return browser_tab
+
+
+RunningServer = tuple[RemoteControlServer, SkippingSwitch]
+
+
+@pytest.fixture
+def running_server(
+    netflix_tab: FakeBrowserTab,
+) -> Iterator[RunningServer]:
+    browser_connection = FakeBrowserConnection(open_tabs=[netflix_tab])
+    skipping_switch = SkippingSwitch()
+    server = RemoteControlServer(
+        browser_connection, build_all_streaming_services(), skipping_switch, port=0
+    )
+    server.start_in_background()
+    yield server, skipping_switch
+    server.shut_down()
+
+
+def read_response(server: RemoteControlServer, path: str) -> bytes:
+    address = f"http://127.0.0.1:{server.port}{path}"
+    with urllib.request.urlopen(address) as response:  # skylos: ignore local server
+        return response.read()
+
+
+def read_json(server: RemoteControlServer, path: str) -> dict[str, Any]:
+    return json.loads(read_response(server, path))
+
+
+def post_command(server: RemoteControlServer, command: dict[str, Any]) -> int:
+    request = urllib.request.Request(
+        f"http://127.0.0.1:{server.port}/command",
+        data=json.dumps(command).encode("utf-8"),
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request) as response:  # skylos: ignore local
+            return response.status
+    except urllib.error.HTTPError as error:
+        return error.code
+
+
+def test_the_remote_page_is_served(running_server: RunningServer) -> None:
+    server, _ = running_server
+    page = read_response(server, "/").decode("utf-8")
+    assert "Intro Skipper" in page
+    assert "seek-bar" in page
+
+
+def test_the_state_reports_video_and_skipping(running_server: RunningServer) -> None:
+    server, _ = running_server
+    state = read_json(server, "/state")
+    assert state["skipping_enabled"] is True
+    assert state["video"]["position_seconds"] == 125.0
+    assert state["video"]["duration_seconds"] == 2700.0
+
+
+def test_toggle_skipping_flips_the_switch(running_server: RunningServer) -> None:
+    server, skipping_switch = running_server
+    post_command(server, {"action": "toggle_skipping"})
+    assert skipping_switch.enabled is False
+    assert read_json(server, "/state")["skipping_enabled"] is False
+
+
+def test_playback_commands_reach_the_video_tab(
+    running_server: RunningServer, netflix_tab: FakeBrowserTab
+) -> None:
+    server, _ = running_server
+    post_command(server, {"action": "toggle_playback"})
+    post_command(server, {"action": "jump", "seconds": -10})
+    post_command(server, {"action": "seek", "position_seconds": 300})
+    post_command(server, {"action": "volume_up"})
+    executed = "".join(netflix_tab.evaluated_javascript)
+    assert "video.play()" in executed
+    assert "video.currentTime = Math.max(0, video.currentTime + -10.0)" in executed
+    assert "video.currentTime = 300.0" in executed
+    assert "video.volume" in executed
+
+
+def test_an_unknown_action_is_rejected(running_server: RunningServer) -> None:
+    server, _ = running_server
+    assert post_command(server, {"action": "explode"}) == 400
