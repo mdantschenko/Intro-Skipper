@@ -1,7 +1,8 @@
 # Intro Skipper
 
 Automatically skips intros, recaps and credits while you watch Netflix, Disney+
-or Amazon Prime Video in a Chrome tab and stream that tab to a Chromecast.
+or Amazon Prime Video in a Chrome tab and stream that tab to your TV — via
+any cast-enabled device (a Chromecast, for example).
 Netflix' "Are you still watching?" prompt is confirmed automatically as well.
 
 ## Why this exists
@@ -9,7 +10,7 @@ Netflix' "Are you still watching?" prompt is confirmed automatically as well.
 I wanted to watch a series with an audio language that is only available in
 another region — that needs a VPN, and a TV cannot run one. A PC can: the
 episode plays in Chrome on the PC (behind the VPN) and the tab is cast to
-the Chromecast, so the TV simply shows what the PC fetches. This tool removes
+the TV, which simply shows what the PC fetches. This tool removes
 the friction of that setup: it clicks "Skip intro", "Skip recap",
 "Next episode" and the "Still watching?" prompt the moment they appear, and
 it serves a remote control page so nobody has to walk to the PC between
@@ -26,7 +27,8 @@ The script starts Chrome with a dedicated profile and an enabled DevTools
 debugging port, watches every open tab once per second and clicks the skip
 buttons of the streaming services as soon as they become visible. Because the
 video runs inside the browser during tab streaming, every click takes effect
-on the Chromecast immediately.
+on the TV immediately. Any way of mirroring the tab works — a Chromecast,
+a TV with cast support built in, or even a plain HDMI cable.
 
 ## Requirements
 
@@ -90,7 +92,7 @@ Amazon there once. Since Chrome 136 the debugging port is no longer allowed on
 the default profile, which is why the separate profile is required.
 
 After that: start an episode in this Chrome window, pick "Cast…" from the
-Chrome menu and send the tab to the Chromecast. Every skipped moment shows up
+Chrome menu and send the tab to your cast device. Every skipped moment shows up
 as a log line in the console; when started with `--log`, it is additionally
 documented in a log file under `%LOCALAPPDATA%\IntroSkipper\logs` (one file
 per run). The script stops automatically as soon as you
@@ -104,7 +106,7 @@ If a service changes its player, only the CSS selectors in
 
 Always cast through the Chrome menu ("Cast… → sources → Cast tab"), never
 through the cast icon inside the player: the in-player icon hands playback
-over to the Chromecast, which then fetches from the service with its own
+over to the cast device, which then fetches from the service with its own
 internet connection — bypassing the VPN and defeating the setup described
 above. With tab casting the PC stays in charge of fetching.
 
