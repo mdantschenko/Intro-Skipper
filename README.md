@@ -53,8 +53,15 @@ Hintergrund weiterläuft; Strg+C funktioniert weiterhin.
 ```
 uv run pytest
 uv run black --check .
+uv run ruff check .
 uv run radon cc src main.py -s -a
-uv run skylos .
+uv run skylos . -a
 uv run complexipy src main.py
 uv run pydeps src/intro_skipper --noshow -o dependency_graph.svg
+uv run --with pyright pyright
 ```
+
+Der Skylos-Volldurchlauf (`-a`) prüft neben Dead Code auch Security, Secrets,
+Qualität, AI-Defects und bekannte Lücken in den Abhängigkeiten; die
+projektspezifischen Regeln dazu stehen in der `[tool.skylos]`-Sektion der
+`pyproject.toml`.

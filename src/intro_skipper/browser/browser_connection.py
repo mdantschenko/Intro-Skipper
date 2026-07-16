@@ -16,7 +16,7 @@ class BrowserTab(ABC):
         """Click the first visible matching element and report whether one was clicked."""
 
 
-class BrowserConnection(ABC):
+class BrowserConnection(ABC):  # skylos: ignore[SKY-Q702] interfaces share no state
     @abstractmethod
     def is_reachable(self) -> bool:
         """Report whether the browser answers on its debugging interface."""

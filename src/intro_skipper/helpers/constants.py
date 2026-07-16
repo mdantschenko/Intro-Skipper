@@ -17,6 +17,14 @@ class StreamingServiceHomepages:
     AMAZON_PRIME_VIDEO = "https://www.amazon.de/gp/video/storefront"
 
 
+class SkipTargetDescriptions:
+    SKIPPED_INTRO = "skipped the intro"
+    SKIPPED_RECAP = "skipped the recap"
+    SKIPPED_INTRO_OR_RECAP = "skipped the intro or recap"
+    STARTED_NEXT_EPISODE = "started the next episode"
+    CONFIRMED_STILL_WATCHING = "confirmed the still-watching prompt"
+
+
 class ChromeConstants:
     EXECUTABLE_PATH = Path("C:/Program Files/Google/Chrome/Application/chrome.exe")
     DEBUGGING_PORT = 9222

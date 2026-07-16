@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "Überspringt Intros, Rückblicke und Abspänne beim Chromecast-Tab-Streaming von Netflix, Disney+ und Amazon Prime Video."
 requires-python = ">=3.12"
 dependencies = [
-    "requests>=2.32",
+    "requests>=2.34",
     "websocket-client>=1.8",
 ]
 
@@ -12,6 +12,7 @@ dependencies = [
 dev = [
     "pytest",
     "black",
+    "ruff",
     "radon",
     "skylos",
     "pydeps",
@@ -27,3 +28,96 @@ packages = ["src/intro_skipper"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.skylos]
+complexity = 10
+nesting = 3
+max_args = 5
+max_lines = 50
+god_file_max_lines = 500
+god_file_max_definitions = 40
+god_file_max_top_level_definitions = 25
+duplicate_strings = 3
+model = "gpt-4.1"
+exclude = []
+# SKY-Q802/SKY-Q803: file-level I/A/D architecture signals; constants and
+# dataclass modules are 100% concrete and stable by design in this project.
+# SKY-D223: undeclared-import check does not understand [dependency-groups],
+# where pytest is declared.
+ignore = ["SKY-Q802", "SKY-Q803", "SKY-D223"]
+
+[tool.skylos.masking]
+names = []
+decorators = []
+bases = []
+
+[tool.skylos.dead_code]
+entrypoints = []
+
+# [[tool.skylos.dead_code.entrypoints]]
+# type = "class"
+# name = "Main"
+# path = "**/main.py"
+# base_classes = ["Application"]
+# reason = "framework entrypoint"
+#
+# [[tool.skylos.dead_code.entrypoints]]
+# type = "method"
+# name = ["create", "pre_hook", "post_hook"]
+# parent = { name = "Main", base_classes = ["Application"] }
+# reason = "framework lifecycle method"
+
+[tool.skylos.templates]
+# security = ".skylos/templates/security.md"
+# quality = ".skylos/templates/quality.md"
+# security_audit = ".skylos/templates/security_audit.md"
+# review = ".skylos/templates/review.md"
+
+[tool.skylos.vibe]
+extra_phantom_names = []
+extra_phantom_decorators = []
+extra_credential_names = []
+extra_sensitive_file_keywords = []
+extra_network_timeout_calls = []
+
+[tool.skylos.architecture]
+strict = false
+# Q802/Q803 are file-level I/A/D architecture signals by default. Set this to
+# true only if those signals should block strict gates in this project.
+enforce_iad = false
+
+# [[tool.skylos.architecture.layers]]
+# name = "api"
+# patterns = ["app.api", "app.routes"]
+#
+# [[tool.skylos.architecture.layers]]
+# name = "domain"
+# patterns = ["app.domain", "app.models"]
+#
+# [[tool.skylos.architecture.rules]]
+# from = "domain"
+# deny = ["api"]
+
+[tool.skylos.whitelist]
+names = []
+
+[tool.skylos.whitelist.documented]
+
+[tool.skylos.whitelist.temporary]
+
+[tool.skylos.gate]
+fail_on_critical = true
+max_critical = 0 
+max_high = 5
+max_security = 0
+max_quality = 10
+strict = false
