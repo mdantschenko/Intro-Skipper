@@ -179,4 +179,6 @@ def test_episode_buttons_reach_the_video_tab(
     post_command(server, {"action": "restart_episode"})
     executed = "".join(netflix_tab.evaluated_javascript)
     assert "control-next" in executed
+    assert "mousemove" in executed
+    assert "video.duration - 3" in executed
     assert "seekToSeconds(Math.max(0, 0.0))" in executed

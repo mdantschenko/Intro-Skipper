@@ -109,6 +109,46 @@ class VideoControlJavaScript:
         })()
     """
     )
+    # Netflix unmounts its control bar while idle, so the next button may
+    # not exist yet: click if present, otherwise wake the controls with a
+    # mouse move and retry; as a last resort jump to the credits, where the
+    # services advance to the next episode on their own.
+    NEXT_EPISODE_TEMPLATE = (
+        """
+        (() => {
+            const video = document.querySelector("video");
+    """
+        + _SEEK_FUNCTION
+        + """
+            const clickNextButton = () => {
+                for (const selector of __CSS_SELECTORS__) {
+                    const button = document.querySelector(selector);
+                    if (button !== null) {
+                        button.click();
+                        return true;
+                    }
+                }
+                return false;
+            };
+            if (clickNextButton()) {
+                return true;
+            }
+            document.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+            if (video !== null) {
+                video.dispatchEvent(new MouseEvent("mousemove", { bubbles: true }));
+            }
+            setTimeout(() => {
+                if (clickNextButton() || video === null) {
+                    return;
+                }
+                if (Number.isFinite(video.duration)) {
+                    seekToSeconds(Math.max(0, video.duration - 3));
+                }
+            }, 400);
+            return true;
+        })()
+    """
+    )
 
 
 class UpdateCheckConstants:
@@ -162,18 +202,6 @@ class ChromeConstants:
 class JavaScriptSnippets:
     READ_VIEWPORT_SIZE = "({width: window.innerWidth, height: window.innerHeight})"
     NAVIGATE_TEMPLATE = "window.location.href = __TARGET_URL__"
-    CLICK_FIRST_MATCH_TEMPLATE = """
-        (() => {
-            for (const selector of __CSS_SELECTORS__) {
-                const element = document.querySelector(selector);
-                if (element !== null) {
-                    element.click();
-                    return true;
-                }
-            }
-            return false;
-        })()
-    """
     CLICK_FIRST_VISIBLE_ELEMENT_TEMPLATE = """
         (() => {
             for (const element of document.querySelectorAll(__CSS_SELECTOR__)) {

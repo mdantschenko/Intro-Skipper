@@ -1,6 +1,6 @@
 [project]
 name = "intro-skipper"
-version = "1.9.2"
+version = "1.9.3"
 description = "Skips intros, recaps and credits while tab-streaming Netflix, Disney+ or Amazon Prime Video to a Chromecast."
 requires-python = ">=3.12"
 dependencies = [

@@ -199,7 +199,7 @@ _VIDEO_JAVASCRIPT_BUILDERS: dict[str, Callable[[dict[str, Any]], str]] = {
         float(command.get("position_seconds", 0))
     ),
     "restart_episode": lambda command: _build_seek_javascript(0.0),
-    "next_episode": lambda command: JavaScriptSnippets.CLICK_FIRST_MATCH_TEMPLATE.replace(
+    "next_episode": lambda command: VideoControlJavaScript.NEXT_EPISODE_TEMPLATE.replace(
         "__CSS_SELECTORS__",
         json.dumps(list(PlayerControlSelectors.NEXT_EPISODE_BUTTONS)),
     ),
