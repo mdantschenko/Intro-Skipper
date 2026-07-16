@@ -22,6 +22,11 @@ jobs:
     permissions:
       contents: write
     steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+          fetch-tags: true
       - name: Create the GitHub release described by the tag message
         env:
           GH_TOKEN: ${{ github.token }}
@@ -29,8 +34,7 @@ jobs:
         # The description of the annotated tag becomes the release text,
         # prepended above the auto-generated changelog notes.
         run: |
-          tag_object_sha=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --jq '.object.sha')
-          tag_message=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_object_sha" --jq '.message' || echo "")
+          tag_message=$(git tag --list --format='%(contents)' "$TAG")
           gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --title "$TAG" \
