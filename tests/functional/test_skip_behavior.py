@@ -1,0 +1,90 @@
+from intro_skipper.application import IntroSkipperApplication
+from intro_skipper.helpers.constants import (
+    AmazonPrimeSelectors,
+    DisneyPlusSelectors,
+    NetflixSelectors,
+)
+from intro_skipper.services.streaming_service_catalog import (
+    build_all_streaming_services,
+)
+from tests.functional.browser_fakes import FakeBrowserConnection, FakeBrowserTab
+
+NETFLIX_EPISODE_URL = "https://www.netflix.com/watch/81091393"
+
+
+def run_single_pass_over(*browser_tabs: FakeBrowserTab) -> None:
+    browser_connection = FakeBrowserConnection(open_tabs=list(browser_tabs))
+    application = IntroSkipperApplication(
+        browser_connection, build_all_streaming_services()
+    )
+    application.run_single_pass()
+
+
+def test_visible_netflix_intro_button_is_clicked() -> None:
+    netflix_tab = FakeBrowserTab(NETFLIX_EPISODE_URL, {NetflixSelectors.SKIP_INTRO})
+    run_single_pass_over(netflix_tab)
+    assert netflix_tab.clicked_css_selectors == [NetflixSelectors.SKIP_INTRO]
+
+
+def test_visible_netflix_recap_button_is_clicked() -> None:
+    netflix_tab = FakeBrowserTab(NETFLIX_EPISODE_URL, {NetflixSelectors.SKIP_RECAP})
+    run_single_pass_over(netflix_tab)
+    assert netflix_tab.clicked_css_selectors == [NetflixSelectors.SKIP_RECAP]
+
+
+def test_netflix_next_episode_button_is_clicked() -> None:
+    netflix_tab = FakeBrowserTab(NETFLIX_EPISODE_URL, {NetflixSelectors.NEXT_EPISODE})
+    run_single_pass_over(netflix_tab)
+    assert netflix_tab.clicked_css_selectors == [NetflixSelectors.NEXT_EPISODE]
+
+
+def test_netflix_still_watching_dialog_is_confirmed() -> None:
+    netflix_tab = FakeBrowserTab(
+        NETFLIX_EPISODE_URL, {NetflixSelectors.CONTINUE_WATCHING}
+    )
+    run_single_pass_over(netflix_tab)
+    assert netflix_tab.clicked_css_selectors == [NetflixSelectors.CONTINUE_WATCHING]
+
+
+def test_disney_plus_skip_button_is_clicked() -> None:
+    disney_plus_tab = FakeBrowserTab(
+        "https://www.disneyplus.com/video/3e06e1e2",
+        {DisneyPlusSelectors.SKIP_INTRO_OR_RECAP},
+    )
+    run_single_pass_over(disney_plus_tab)
+    assert disney_plus_tab.clicked_css_selectors == [
+        DisneyPlusSelectors.SKIP_INTRO_OR_RECAP
+    ]
+
+
+def test_amazon_prime_skip_button_is_clicked() -> None:
+    amazon_prime_tab = FakeBrowserTab(
+        "https://www.amazon.de/gp/video/detail/B0DTLJ3K2M",
+        {AmazonPrimeSelectors.SKIP_INTRO_OR_RECAP},
+    )
+    run_single_pass_over(amazon_prime_tab)
+    assert amazon_prime_tab.clicked_css_selectors == [
+        AmazonPrimeSelectors.SKIP_INTRO_OR_RECAP
+    ]
+
+
+def test_tab_without_visible_buttons_stays_untouched() -> None:
+    netflix_tab = FakeBrowserTab(NETFLIX_EPISODE_URL)
+    run_single_pass_over(netflix_tab)
+    assert netflix_tab.clicked_css_selectors == []
+
+
+def test_unrelated_tab_stays_untouched() -> None:
+    search_tab = FakeBrowserTab(
+        "https://www.google.com/search?q=serien", {NetflixSelectors.SKIP_INTRO}
+    )
+    run_single_pass_over(search_tab)
+    assert search_tab.clicked_css_selectors == []
+
+
+def test_unreachable_browser_does_not_crash_the_polling_pass() -> None:
+    browser_connection = FakeBrowserConnection(reachable=False)
+    application = IntroSkipperApplication(
+        browser_connection, build_all_streaming_services()
+    )
+    application.run_single_pass()
