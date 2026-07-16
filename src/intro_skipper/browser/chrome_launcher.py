@@ -31,6 +31,10 @@ class ChromeLauncher:
             f"--user-data-dir={ChromeConstants.USER_PROFILE_DIRECTORY}",
             "--no-first-run",
             "--no-default-browser-check",
+            # Without this flag Chrome keeps running in the background after
+            # the last window closes, blocks the debugging port and the next
+            # launch silently opens no window.
+            "--disable-background-mode",
         ]
 
     def _wait_until_reachable(self) -> None:
